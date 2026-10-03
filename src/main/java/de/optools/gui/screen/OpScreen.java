@@ -47,6 +47,8 @@ public abstract class OpScreen extends Screen {
 
 	@Override
 	public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float delta) {
+		// own stratum, so in-world HUD sprites (hotbar, hearts) are covered as well
+		g.nextStratum();
 		g.fill(0, 0, width, height, Theme.BACKDROP);
 	}
 

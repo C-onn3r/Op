@@ -39,7 +39,8 @@ public final class MainScreen extends OpScreen {
 		}
 	}
 
-	private static final int SIDEBAR = 112;
+	private int sidebar = 112;
+	private boolean compact;
 	private Tab tab;
 	private TabView view;
 
@@ -70,16 +71,21 @@ public final class MainScreen extends OpScreen {
 	@Override
 	protected void init() {
 		super.init();
+		// narrow windows / large GUI scale: icon-only sidebar
+		compact = width < 560;
+		sidebar = compact ? 30 : 112;
 		int y = 40;
 		for (Tab t : Tab.values()) {
-			UiButton b = new UiButton(() -> t.icon + "  " + t.title, t == tab ? UiButton.Style.SECONDARY : UiButton.Style.GHOST,
-					() -> switchTab(t));
-			b.bounds(8, y, SIDEBAR - 16, 18);
+			UiButton b = new UiButton(() -> compact ? t.icon : t.icon + "  " + t.title,
+					t == tab ? UiButton.Style.SECONDARY : UiButton.Style.GHOST, () -> switchTab(t));
+			if (compact) b.tooltip(t.title);
+			b.bounds(compact ? 6 : 8, y, sidebar - (compact ? 10 : 16), 18);
 			add(b);
 			y += 21;
 		}
 		view = tab.factory.apply(this);
-		view.init(SIDEBAR + 10, 10, width - SIDEBAR - 20, height - 20);
+		int margin = compact ? 6 : 10;
+		view.init(sidebar + margin, 10, width - sidebar - margin * 2, height - 20);
 	}
 
 	@Override
@@ -90,13 +96,16 @@ public final class MainScreen extends OpScreen {
 	@Override
 	protected void renderContent(GuiGraphics g, int mx, int my, float delta) {
 		// sidebar
-		g.fill(0, 0, SIDEBAR, height, Theme.PANEL);
-		g.fill(SIDEBAR - 1, 0, SIDEBAR, height, Theme.BORDER);
+		g.fill(0, 0, sidebar, height, Theme.PANEL);
+		g.fill(sidebar - 1, 0, sidebar, height, Theme.BORDER);
 		int accent = Theme.accent();
-		UiDraw.panel(g, 10, 11, 16, 16, accent);
-		UiDraw.textCentered(g, "OP", 18, 15, 0xFFFFFFFF);
-		UiDraw.text(g, "OP Tools", 31, 11, Theme.TEXT);
-		UiDraw.text(g, OpTools.VERSION, 31, 21, Theme.MUTED);
+		int logoX = compact ? 7 : 10;
+		UiDraw.panel(g, logoX, 11, 16, 16, accent);
+		UiDraw.textCentered(g, "OP", logoX + 8, 15, 0xFFFFFFFF);
+		if (!compact) {
+			UiDraw.text(g, "OP Tools", 31, 11, Theme.TEXT);
+			UiDraw.text(g, OpTools.VERSION, 31, 21, Theme.MUTED);
+		}
 
 		// active tab marker
 		int index = tab.ordinal();
@@ -106,10 +115,18 @@ public final class MainScreen extends OpScreen {
 		OpTools mod = OpTools.get();
 		boolean connected = mod.isActiveServer() && minecraft.getCurrentServer() != null;
 		int sy = height - 34;
-		g.fill(8, sy - 6, SIDEBAR - 8, sy - 5, Theme.BORDER);
-		UiDraw.panel(g, 10, sy + 2, 5, 5, connected ? Theme.POSITIVE : Theme.FAINT);
-		UiDraw.text(g, connected ? "OPSUCHT verbunden" : "Nicht auf OPSUCHT", 19, sy, connected ? Theme.TEXT : Theme.MUTED);
-		UiDraw.text(g, "Daten: " + mod.dataStore().provider().displayName(), 10, sy + 12, Theme.FAINT);
+		if (compact) {
+			UiDraw.panel(g, 12, height - 16, 6, 6, connected ? Theme.POSITIVE : Theme.FAINT);
+			if (UiDraw.inside(mx, my, 6, height - 22, 18, 18)) {
+				UiDraw.tooltip(g, java.util.List.of(connected ? "OPSUCHT verbunden" : "Nicht auf OPSUCHT",
+						"Daten: " + mod.dataStore().provider().displayName()), mx, my);
+			}
+		} else {
+			g.fill(8, sy - 6, sidebar - 8, sy - 5, Theme.BORDER);
+			UiDraw.panel(g, 10, sy + 2, 5, 5, connected ? Theme.POSITIVE : Theme.FAINT);
+			UiDraw.text(g, connected ? "OPSUCHT verbunden" : "Nicht auf OPSUCHT", 19, sy, connected ? Theme.TEXT : Theme.MUTED);
+			UiDraw.text(g, "Daten: " + mod.dataStore().provider().displayName(), 10, sy + 12, Theme.FAINT);
+		}
 
 		if (view != null) view.render(g, mx, my, delta);
 	}

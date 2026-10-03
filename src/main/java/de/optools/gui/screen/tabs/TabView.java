@@ -39,7 +39,13 @@ public abstract class TabView {
 
 	protected void title(GuiGraphics g, String title, String subtitle) {
 		UiDraw.text(g, title, x, y + 2, Theme.TEXT);
-		if (subtitle != null) UiDraw.text(g, subtitle, x + UiDraw.font().width(title) + 8, y + 2, Theme.FAINT);
+		int sx = x + UiDraw.font().width(title) + 8;
+		if (subtitle != null) UiDraw.text(g, UiDraw.ellipsize(subtitle, titleSpace() - (sx - x)), sx, y + 2, Theme.FAINT);
+	}
+
+	/** Width available for the title line (right side may hold buttons/chips). */
+	protected int titleSpace() {
+		return w;
 	}
 
 	/** Stat card: label on top, big value below, optional sub line. */

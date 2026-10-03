@@ -68,10 +68,12 @@ public final class FinanceTab extends TabView {
 		list = add(new ScrollList<FinanceEntry>(12, (g, e, rx, ry, rw, rh, hover, mx, my) -> {
 			UiDraw.text(g, Fmt.dateTime(e.timestamp), rx + 4, ry + 2, Theme.MUTED);
 			int catColor = e.category == FinanceEntry.Category.JOB ? Theme.accent() : e.category == FinanceEntry.Category.PAYMENT ? Theme.INFO : Theme.MUTED;
-			UiDraw.text(g, e.category.label, rx + 66, ry + 2, catColor);
+			boolean wide = rw > 300;
+			if (wide) UiDraw.text(g, e.category.label, rx + 66, ry + 2, catColor);
 			String amount = Fmt.signedMoney(e.signedAmount());
 			int aw = UiDraw.font().width(amount);
-			UiDraw.text(g, UiDraw.ellipsize(e.description, rw - 120 - aw), rx + 112, ry + 2, Theme.TEXT);
+			int dx = wide ? 112 : 66;
+			UiDraw.text(g, UiDraw.ellipsize(e.description, rw - dx - 8 - aw), rx + dx, ry + 2, wide ? Theme.TEXT : catColor);
 			UiDraw.textRight(g, amount, rx + rw - 4, ry + 2, e.direction == FinanceEntry.Direction.INCOME ? Theme.POSITIVE : Theme.NEGATIVE);
 			if (hover && !e.raw.isEmpty()) UiDraw.tooltip(g, List.of(e.description, "Nachricht: " + e.raw), mx, my);
 		})).emptyText("Noch keine Buchungen – Zahlungen und Jobeinnahmen werden automatisch erfasst");

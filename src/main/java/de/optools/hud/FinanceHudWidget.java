@@ -43,7 +43,7 @@ public final class FinanceHudWidget extends HudWidget {
 
 	@Override
 	protected double defaultY() {
-		return 0.62;
+		return 0.5;
 	}
 
 	@Override

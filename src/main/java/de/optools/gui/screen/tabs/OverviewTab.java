@@ -33,11 +33,14 @@ public final class OverviewTab extends TabView {
 				() -> mod.jobTracker().setPaused(!mod.jobTracker().isPaused()),
 				() -> screen.switchTab(MainScreen.Tab.SETTINGS)
 		};
+		int total = 0;
+		for (String l : labels) total += UiButton.widthFor(l) + 6;
+		boolean fit = total - 6 <= w;
 		for (int i = 0; i < labels.length; i++) {
-			int bw = UiButton.widthFor(labels[i]);
+			int bw = fit ? UiButton.widthFor(labels[i]) : col(w, labels.length, 4);
 			add(new UiButton(labels[i], i == 0 ? UiButton.Style.PRIMARY : UiButton.Style.SECONDARY, actions[i]))
-					.bounds(bx, by, bw, 18);
-			bx += bw + 6;
+					.tooltip(fit ? null : labels[i]).bounds(bx, by, bw, 18);
+			bx += bw + (fit ? 6 : 4);
 		}
 	}
 
@@ -89,14 +92,14 @@ public final class OverviewTab extends TabView {
 		// hints
 		int iy = fy + ch + 12;
 		if (!mod.isActiveServer()) {
-			UiDraw.text(g, "ℹ Tracking ist aktiv, sobald du mit OPSUCHT verbunden bist (opsucht.net).", x, iy, Theme.WARNING);
+			UiDraw.text(g, UiDraw.ellipsize("ℹ Tracking ist aktiv, sobald du mit OPSUCHT verbunden bist (opsucht.net).", w), x, iy, Theme.WARNING);
 			iy += 12;
 		}
 		if (!mod.patterns().errors().isEmpty()) {
-			UiDraw.text(g, "⚠ " + mod.patterns().errors().size() + " fehlerhafte Einträge in opsucht-patterns.json", x, iy, Theme.NEGATIVE);
+			UiDraw.text(g, UiDraw.ellipsize("⚠ " + mod.patterns().errors().size() + " fehlerhafte Einträge in opsucht-patterns.json", w), x, iy, Theme.NEGATIVE);
 			iy += 12;
 		}
 		String key = mod.menuKey().getTranslatedKeyMessage().getString();
-		UiDraw.text(g, "Tipp: Menü mit [" + key + "] oder /optools öffnen · /optools session neu startet eine neue Session.", x, iy, Theme.FAINT);
+		UiDraw.text(g, UiDraw.ellipsize("Tipp: Menü mit [" + key + "] oder /optools öffnen · /optools session neu startet eine neue Session.", w), x, iy, Theme.FAINT);
 	}
 }

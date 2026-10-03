@@ -52,21 +52,22 @@ public final class JobsTab extends TabView {
 
 		int listTop = top + chartH + 6;
 		int listH = y + h - listTop;
-		int leftW = (int) (w * 0.58);
+		int leftW = w < 360 ? w : (int) (w * 0.58);
 		sessionList = add(new ScrollList<JobSessionRecord>(12, (g, s, rx, ry, rw, rh, hover, mx, my) -> {
 			double hours = Math.max(1, s.activeMs) / 3_600_000.0;
 			UiDraw.text(g, Fmt.dateTime(s.start), rx + 4, ry + 2, Theme.MUTED);
-			UiDraw.text(g, Fmt.duration(s.activeMs), rx + 64, ry + 2, Theme.TEXT);
-			UiDraw.textRight(g, Fmt.compact(s.totalXp()), rx + rw - 120, ry + 2, Theme.TEXT);
-			UiDraw.textRight(g, Fmt.compact(s.totalMoney()) + " $", rx + rw - 62, ry + 2, Theme.POSITIVE);
+			if (rw > 230) UiDraw.text(g, Fmt.duration(s.activeMs), rx + 66, ry + 2, Theme.TEXT);
+			UiDraw.textRight(g, Fmt.compact(s.totalXp()), rx + rw - rw * 30 / 100, ry + 2, Theme.TEXT);
+			UiDraw.textRight(g, Fmt.compact(s.totalMoney()) + " $", rx + rw - rw * 15 / 100, ry + 2, Theme.POSITIVE);
 			UiDraw.textRight(g, Fmt.compact(metric == 0 ? s.totalXp() / hours : s.totalMoney() / hours), rx + rw - 4, ry + 2, Theme.accent());
 			if (hover) UiDraw.tooltip(g, sessionTooltip(s), mx, my);
 		})).header(13, g -> {
 			int hy = y + listTopOffset() + 3;
+			int rw = leftW - 2;
 			UiDraw.text(g, "Session", x + 5, hy, Theme.FAINT);
-			UiDraw.text(g, "Dauer", x + 65, hy, Theme.FAINT);
-			UiDraw.textRight(g, "XP", x + leftW - 121, hy, Theme.FAINT);
-			UiDraw.textRight(g, "Geld", x + leftW - 63, hy, Theme.FAINT);
+			if (rw > 230) UiDraw.text(g, "Dauer", x + 67, hy, Theme.FAINT);
+			UiDraw.textRight(g, "XP", x + 1 + rw - rw * 30 / 100, hy, Theme.FAINT);
+			UiDraw.textRight(g, "Geld", x + 1 + rw - rw * 15 / 100, hy, Theme.FAINT);
 			UiDraw.textRight(g, metric == 0 ? "XP/h" : "$/h", x + leftW - 5, hy, Theme.FAINT);
 		}).emptyText("Noch keine abgeschlossenen Sessions");
 		sessionList.bounds(x, listTop, leftW, listH);
@@ -82,6 +83,7 @@ public final class JobsTab extends TabView {
 		})).header(13, g -> UiDraw.text(g, "Jobs gesamt", rightX + 5, y + listTopOffset() + 3, Theme.FAINT))
 				.emptyText("Noch keine Jobdaten");
 		jobList.bounds(rightX, listTop, rightW, listH);
+		jobList.visible = w >= 360;
 		update();
 	}
 
@@ -138,6 +140,11 @@ public final class JobsTab extends TabView {
 		Collections.reverse(reversed);
 		sessionList.items(reversed);
 		jobList.items(JobStatistics.perJob(all));
+	}
+
+	@Override
+	protected int titleSpace() {
+		return w - 70;
 	}
 
 	@Override

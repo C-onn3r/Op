@@ -29,7 +29,8 @@ import java.util.Set;
 /** Marketplace prices from {@code /market/prices} with price history from {@code /market/history/{material}}. */
 public final class MarketTab extends TabView {
 	private static final String[] INTERVALS = {"HOURLY", "DAILY", "WEEKLY", "MONTHLY"};
-	private static final List<String> INTERVAL_LABELS = List.of("Stunden", "Tage", "Wochen", "Monate");
+	private static final List<String> INTERVAL_LABELS = List.of("Std.", "Tag", "Woche", "Monat");
+	private static final int PRICE_COL = 50;
 	private static String category = null;
 	private static String search = "";
 	private static String selectedMaterial;
@@ -65,7 +66,7 @@ public final class MarketTab extends TabView {
 			category = i == 0 ? null : categoryNames.get(i);
 			updateList();
 		}));
-		int listW = (int) (w * 0.56);
+		int listW = (int) (w * (w < 400 ? 0.62 : 0.56));
 		categoryChips.bounds(x, y + 16, w, 13);
 		int chipsH = categoryChips.layout();
 
@@ -82,14 +83,15 @@ public final class MarketTab extends TabView {
 		int listTop = searchY + 19;
 		list = add(new ScrollList<MarketItem>(18, (g, item, rx, ry, rw, rh, hover, mx, my) -> {
 			g.renderItem(ItemIcons.stack(item.material()), rx + 3, ry + 1);
-			UiDraw.text(g, UiDraw.ellipsize(ItemIcons.name(item.material()), rw - 140), rx + 23, ry + 5, Theme.TEXT);
-			UiDraw.textRight(g, price(item.buy()), rx + rw - 66, ry + 5, Theme.POSITIVE);
+			UiDraw.text(g, UiDraw.ellipsize(ItemIcons.name(item.material()), rw - 24 - 2 * PRICE_COL), rx + 23, ry + 5, Theme.TEXT);
+			UiDraw.textRight(g, price(item.buy()), rx + rw - 4 - PRICE_COL, ry + 5, Theme.POSITIVE);
 			UiDraw.textRight(g, price(item.sell()), rx + rw - 4, ry + 5, Theme.WARNING);
 		})).header(13, g -> {
 			int hy = listTop() + 3;
+			int scroll = list.items().size() * 18 > list.height - 13 ? 5 : 0;
 			UiDraw.text(g, "Item", x + 24, hy, Theme.FAINT);
-			UiDraw.textRight(g, "Kauf (BUY)", x + listW - 67, hy, Theme.FAINT);
-			UiDraw.textRight(g, "Verkauf (SELL)", x + listW - 5, hy, Theme.FAINT);
+			UiDraw.textRight(g, "Kauf", x + listW - 5 - scroll - PRICE_COL, hy, Theme.FAINT);
+			UiDraw.textRight(g, "Verkauf", x + listW - 5 - scroll, hy, Theme.FAINT);
 		}).onClick(item -> {
 			selectedMaterial = item.material();
 			updateChart();
@@ -104,7 +106,7 @@ public final class MarketTab extends TabView {
 		}));
 		intervalChips.bounds(detailX, listTop + 58, detailW, 13);
 		int ich = intervalChips.layout();
-		chart = add(new LineChart("Ø Handelspreis Marktplatz"));
+		chart = add(new LineChart("Preisverlauf Marktplatz"));
 		chart.bounds(detailX, listTop + 58 + ich + 4, detailW, Math.max(60, y + h - (listTop + 58 + ich + 4)));
 		updateList();
 		updateChart();
@@ -186,11 +188,16 @@ public final class MarketTab extends TabView {
 	}
 
 	@Override
+	protected int titleSpace() {
+		return w - UiButton.widthFor("Aktualisieren") - 6;
+	}
+
+	@Override
 	public void render(GuiGraphics g, int mx, int my, float delta) {
 		var market = mod.market();
 		String sub = market.loading() ? "lädt…" : market.pricesUpdated() > 0 ? "Stand " + Fmt.time(market.pricesUpdated()) + " · api.opsucht.net" : null;
 		title(g, "Marktpreise", sub);
-		if (market.error() != null) UiDraw.text(g, market.error(), x + 160, y + 2, Theme.NEGATIVE);
+		if (market.error() != null) UiDraw.text(g, UiDraw.ellipsize(market.error(), w), x, y + h - 9, Theme.NEGATIVE);
 
 		// detail card
 		int top = list.y;
@@ -209,8 +216,8 @@ public final class MarketTab extends TabView {
 	}
 
 	private static void side(GuiGraphics g, int x, int y, int w, String label, OrderInfo info, int color) {
-		UiDraw.text(g, label, x, y, Theme.FAINT);
-		UiDraw.text(g, info == null ? "–" : Fmt.money(info.price()), x, y + 10, color);
-		if (info != null) UiDraw.textRight(g, info.activeOrders() + " Orders", x + w, y, Theme.FAINT);
+		String head = info == null ? label : label + " · " + info.activeOrders() + " Orders";
+		UiDraw.text(g, UiDraw.ellipsize(head, w), x, y, Theme.FAINT);
+		UiDraw.text(g, UiDraw.ellipsize(info == null ? "–" : Fmt.money(info.price()), w), x, y + 10, color);
 	}
 }

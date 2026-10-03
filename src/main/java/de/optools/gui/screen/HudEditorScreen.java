@@ -36,6 +36,7 @@ public final class HudEditorScreen extends OpScreen {
 
 	@Override
 	public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float delta) {
+		g.nextStratum();
 		g.fill(0, 0, width, height, 0x66000000);
 		// grid
 		for (int gx = 0; gx < width; gx += 20) g.fill(gx, 0, gx + 1, height, 0x10FFFFFF);
@@ -58,15 +59,19 @@ public final class HudEditorScreen extends OpScreen {
 				UiDraw.textCentered(g, "ausgeblendet", l.x() + l.scaledWidth() / 2, l.y() + l.scaledHeight() / 2 - 4, Theme.MUTED);
 			}
 		}
-		UiDraw.panel(g, width / 2 - 150, 8, 300, 24, Theme.PANEL);
-		UiDraw.textCentered(g, "Ziehen = verschieben · Mausrad = Größe · Rechtsklick = ein/aus", width / 2, 12, Theme.TEXT);
+		String line1 = "Ziehen = verschieben · Mausrad = Größe · Shift+Mausrad = Deckkraft · Rechtsklick = ein/aus";
+		String line2;
 		if (hovered != null) {
 			HudWidgetConfig c = hovered.config();
-			UiDraw.textCentered(g, hovered.title() + " · " + Math.round(c.scale * 100) + " % · Shift+Mausrad = Deckkraft "
-					+ Math.round(c.opacity * 100) + " %", width / 2, 22, Theme.MUTED);
+			line2 = hovered.title() + " · Größe " + Math.round(c.scale * 100) + " % · Deckkraft " + Math.round(c.opacity * 100) + " %";
 		} else {
-			UiDraw.textCentered(g, "Weitere Optionen unter /optools → Einstellungen", width / 2, 22, Theme.FAINT);
+			line2 = "Weitere Optionen unter /optools → Einstellungen";
 		}
+		int maxW = width - 20;
+		int pw = Math.min(maxW, Math.max(font.width(line1), font.width(line2)) + 16);
+		UiDraw.panel(g, width / 2 - pw / 2, 8, pw, 24, Theme.PANEL);
+		UiDraw.textCentered(g, UiDraw.ellipsize(line1, pw - 12), width / 2, 12, Theme.TEXT);
+		UiDraw.textCentered(g, UiDraw.ellipsize(line2, pw - 12), width / 2, 22, hovered != null ? Theme.MUTED : Theme.FAINT);
 	}
 
 	@Override

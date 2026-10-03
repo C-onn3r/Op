@@ -139,6 +139,14 @@ tolerante Varianten. Falls etwas nicht erkannt wird:
 
 Wird eine Job-Aktion doppelt gezählt, hilft die Einstellung *Gewinn-Teiler* bzw. *Doppelte Actionbar ignorieren*.
 
+## Getestet (0.1 Alpha)
+
+* 13 Unit-Tests für Zahlen-, Actionbar-, Zahlungs- und Chat-Parser, Fake-Zahlungs-Schutz, Merchant-Daten und Tracker-Mathematik.
+* Im echten Client (Dev- und Produktionsumgebung mit dem gebauten Jar) mit simulierten OPSUCHT-Nachrichten:
+  Actionbar → HUD/Tracker, Zahlungen → Finanzbuch (Fake-Zeile abgewiesen), klickbare Namen und `/ah`-Links,
+  Live-Daten der OPSUCHT-API in Markt- und Shard-Tab, HUD-Editor, First-Start, Persistenz über Neustarts.
+* Nicht getestet: auf dem echten OPSUCHT-Server (siehe Abschnitt oben zu nicht verifizierten Texten).
+
 ## Bauen
 
 ```bash

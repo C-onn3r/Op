@@ -89,7 +89,7 @@ public final class ScrollList<T> extends UiElement {
 			g.fill(x + 1, y + headerHeight - 1, x + width - 1, y + headerHeight, Theme.BORDER);
 		}
 		if (items.isEmpty()) {
-			UiDraw.textCentered(g, emptyText, x + width / 2, viewTop() + viewHeight() / 2 - 4, Theme.FAINT);
+			UiDraw.textCentered(g, UiDraw.ellipsize(emptyText, width - 10), x + width / 2, viewTop() + viewHeight() / 2 - 4, Theme.FAINT);
 			return;
 		}
 		clampScroll();

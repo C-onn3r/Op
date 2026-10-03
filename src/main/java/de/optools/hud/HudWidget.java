@@ -34,11 +34,12 @@ public abstract class HudWidget {
 	}
 
 	protected double defaultX() {
-		return 0.01;
+		return 0.005;
 	}
 
+	/** Top left by default: free in vanilla and away from the chat. */
 	protected double defaultY() {
-		return 0.3;
+		return 0.02;
 	}
 
 	protected boolean defaultVisible() {

@@ -42,7 +42,6 @@ public final class BarChart extends UiElement {
 	@Override
 	public void render(GuiGraphics g, int mx, int my, float delta) {
 		UiDraw.card(g, x, y, width, height);
-		UiDraw.text(g, title, x + 6, y + 5, Theme.TEXT);
 		// legend
 		int lx = x + width - 6;
 		for (int s = seriesNames.length - 1; s >= 0; s--) {
@@ -54,13 +53,14 @@ public final class BarChart extends UiElement {
 			g.fill(lx, y + 6, lx + 6, y + 12, colors[s % colors.length]);
 			lx -= 6;
 		}
+		UiDraw.text(g, UiDraw.ellipsize(title, lx - x - 10), x + 6, y + 5, Theme.TEXT);
 		int left = x + 40, right = x + width - 8, top = y + 18, bottom = y + height - 14;
 		boolean any = bars.stream().anyMatch(b -> {
 			for (double v : b.values) if (v != 0) return true;
 			return false;
 		});
 		if (bars.isEmpty() || !any || right - left < 10) {
-			UiDraw.textCentered(g, "Noch keine Daten", x + width / 2, y + height / 2 - 4, Theme.FAINT);
+			UiDraw.textCentered(g, UiDraw.ellipsize("Noch keine Daten", width - 10), x + width / 2, y + height / 2 - 4, Theme.FAINT);
 			return;
 		}
 		double min = 0, max = 0;
@@ -78,7 +78,7 @@ public final class BarChart extends UiElement {
 		g.fill(left, zero, right, zero + 1, Theme.withAlpha(0xFFFFFF, 60));
 
 		int n = bars.size();
-		double slot = (right - left) / (double) n;
+		double slot = Math.min(28, (right - left) / (double) n);
 		int series = bars.get(0).values.length;
 		int barW = Math.max(1, (int) ((slot - 2) / series));
 		List<String> tip = null;
@@ -103,7 +103,11 @@ public final class BarChart extends UiElement {
 		}
 		if (n > 0) {
 			UiDraw.text(g, bars.get(0).label, left, bottom + 3, Theme.FAINT);
-			UiDraw.textRight(g, bars.get(n - 1).label, right, bottom + 3, Theme.FAINT);
+			String first = bars.get(0).label, last = bars.get(n - 1).label;
+			int lastX = left + (int) Math.round(n * slot);
+			if (n > 1 && UiDraw.font().width(first) + UiDraw.font().width(last) + 6 < lastX - left) {
+				UiDraw.textRight(g, last, lastX, bottom + 3, Theme.FAINT);
+			}
 		}
 		if (tip != null) {
 			UiDraw.tooltip(g, tip, mx, my);

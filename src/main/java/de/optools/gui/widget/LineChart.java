@@ -53,12 +53,12 @@ public final class LineChart extends UiElement {
 	@Override
 	public void render(GuiGraphics g, int mx, int my, float delta) {
 		UiDraw.card(g, x, y, width, height);
-		UiDraw.text(g, title, x + 6, y + 5, Theme.TEXT);
+		UiDraw.text(g, UiDraw.ellipsize(title, width - 12), x + 6, y + 5, Theme.TEXT);
 		int lineColor = color != 0 ? color : Theme.accent();
 
 		int left = x + 40, right = x + width - 8, top = y + 18, bottom = y + height - 14;
 		if (points.size() < 2 || right - left < 10 || bottom - top < 10) {
-			UiDraw.textCentered(g, emptyText, x + width / 2, y + height / 2 - 4, Theme.FAINT);
+			UiDraw.textCentered(g, UiDraw.ellipsize(emptyText, width - 10), x + width / 2, y + height / 2 - 4, Theme.FAINT);
 			return;
 		}
 		double minX = points.get(0)[0], maxX = points.get(points.size() - 1)[0];
@@ -76,7 +76,9 @@ public final class LineChart extends UiElement {
 			minY -= 1;
 		}
 		double pad = (maxY - minY) * 0.08;
+		boolean nonNegative = minY >= 0;
 		minY -= pad;
+		if (nonNegative) minY = Math.max(0, minY);
 		maxY += pad;
 		if (maxX - minX < 1e-9) maxX = minX + 1;
 
@@ -93,8 +95,11 @@ public final class LineChart extends UiElement {
 			g.fill(left, zy, right, zy + 1, Theme.withAlpha(0xFFFFFF, 50));
 		}
 		// x labels (start / end)
-		UiDraw.text(g, xFormat.apply(minX), left, bottom + 3, Theme.FAINT);
-		UiDraw.textRight(g, xFormat.apply(maxX), right, bottom + 3, Theme.FAINT);
+		String startLabel = xFormat.apply(minX), endLabel = xFormat.apply(maxX);
+		UiDraw.text(g, startLabel, left, bottom + 3, Theme.FAINT);
+		if (UiDraw.font().width(startLabel) + UiDraw.font().width(endLabel) + 6 < right - left) {
+			UiDraw.textRight(g, endLabel, right, bottom + 3, Theme.FAINT);
+		}
 
 		// band
 		if (band.size() >= 2) {

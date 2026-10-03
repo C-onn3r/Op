@@ -7,7 +7,7 @@ import java.util.Set;
 public final class HudWidgetConfig {
 	public boolean visible = true;
 	public double x = 0.01;
-	public double y = 0.30;
+	public double y = 0.02;
 	public float scale = 1.0f;
 	/** Background opacity 0..1. */
 	public float opacity = 0.65f;
