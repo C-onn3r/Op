@@ -15,11 +15,16 @@ import de.optools.hud.HudManager;
 import de.optools.jobs.JobTracker;
 import de.optools.market.MarketService;
 import de.optools.market.api.OpsuchtApiClient;
+import de.optools.market.ShardTooltip;
+import de.optools.opsucht.IncomingText;
 import de.optools.opsucht.OpsuchtPatterns;
 import de.optools.opsucht.PatternRepository;
+import de.optools.opsucht.parse.ChatLine;
 import de.optools.opsucht.parse.ChatLineParser;
 import de.optools.opsucht.parse.JobActionbarParser;
 import de.optools.opsucht.parse.PaymentParser;
+import de.optools.opsucht.parse.RtpParser;
+import de.optools.rtp.RtpTracker;
 import de.optools.opsucht.parse.TextUtil;
 import de.optools.storage.DataProvider;
 import de.optools.storage.DataStore;
@@ -46,6 +51,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
@@ -72,6 +80,10 @@ public final class OpTools implements ClientModInitializer {
 	private JobActionbarParser jobParser;
 	private PaymentParser paymentParser;
 	private ChatLineParser chatLineParser;
+	private RtpParser rtpParser;
+	private RtpTracker rtpTracker;
+	private IncomingText incoming;
+	private final Map<UUID, String> bossTexts = new HashMap<>();
 	private KeyMapping menuKey;
 	private Supplier<Screen> pendingScreen;
 	private boolean firstStartShown;
@@ -103,6 +115,9 @@ public final class OpTools implements ClientModInitializer {
 		jobParser = new JobActionbarParser(patterns);
 		paymentParser = new PaymentParser(patterns);
 		chatLineParser = new ChatLineParser(patterns);
+		rtpParser = new RtpParser(patterns);
+		rtpTracker = new RtpTracker(System::currentTimeMillis);
+		incoming = new IncomingText(dir.resolve("debug"));
 
 		jobTracker = new JobTracker(() -> config().jobs, System::currentTimeMillis);
 		financeBook = new FinanceBook(dataStore, this::config);
@@ -125,6 +140,8 @@ public final class OpTools implements ClientModInitializer {
 		hud = new HudManager(this);
 		HudElementRegistry.addLast(id("hud"), hud::render);
 
+		ShardTooltip.register(this);
+
 		KeyMapping.Category category = KeyMapping.Category.register(id("main"));
 		menuKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.optools.menu", InputConstants.Type.KEYSYM,
 				GLFW.GLFW_KEY_O, category));
@@ -142,13 +159,15 @@ public final class OpTools implements ClientModInitializer {
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, access) -> OpToolsCommands.register(dispatcher));
 
 		ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
-			// Actionbar messages are handled in GuiMixin (covers both packet types), see onActionbar().
-			if (!overlay) onSystemMessage(message);
+			// Actionbar messages are handled in GuiMixin (covers both packet types).
+			if (!overlay) onIncoming(IncomingText.Source.SYSTEM_CHAT, message);
 		});
 
 		ClientTickEvents.END_CLIENT_TICK.register(this::onTick);
 
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(() -> {
+			bossTexts.clear();
+			rtpTracker.reset();
 			jobTracker.finishSession();
 			financeBook.flushJobIncome();
 			dataStore.saveAsync();
@@ -164,6 +183,7 @@ public final class OpTools implements ClientModInitializer {
 
 	private void onTick(Minecraft mc) {
 		jobTracker.tick();
+		rtpTracker.tick();
 
 		if (pendingScreen != null) {
 			Supplier<Screen> next = pendingScreen;
@@ -183,23 +203,45 @@ public final class OpTools implements ClientModInitializer {
 
 	// ---- message entry points (called from Fabric events / mixins) ----
 
-	/** Called for every actionbar text (from {@code GuiMixin}). */
-	public void onActionbar(Component message) {
-		if (!config().modules.jobTracker || !isActiveServer()) return;
-		jobParser.parse(message.getString()).ifPresent(jobTracker::accept);
+	/** Boss bars are re-sent on every update; only changed texts are processed. */
+	public void onBossbar(UUID id, Component name) {
+		if (name == null) return;
+		String plain = name.getString();
+		if (plain.equals(bossTexts.put(id, plain))) return;
+		onIncoming(IncomingText.Source.BOSSBAR, name);
 	}
 
-	/** Non-overlay system messages: payments, and job messages if OPSUCHT shows them in chat. */
-	private void onSystemMessage(Component message) {
+	/**
+	 * Central entry point for every server text the mod looks at (from {@code GuiMixin}, {@code BossHealthOverlayMixin}
+	 * and the Fabric system-message event). Dispatches to job tracker, finance book and RTP tracker.
+	 */
+	public void onIncoming(IncomingText.Source source, Component message) {
+		incoming.record(source, message, config().general.debugLogIncoming);
 		if (!isActiveServer()) return;
 		String plain = TextUtil.stripFormatting(message.getString());
-		if (chatLineParser.parse(plain).isPresent()) return; // written by a player – never trusted
-		if (config().modules.finance) {
+		boolean chat = source == IncomingText.Source.SYSTEM_CHAT;
+		ChatLine chatLine = chat ? chatLineParser.parse(plain).orElse(null) : null;
+		// "RTP » ..." looks like "Name » text" – it is only player chat if the sender really is a player
+		boolean fromPlayer = chatLine != null && isPlayerName(chatLine.name());
+
+		if (config().modules.jobTracker && !fromPlayer) {
+			// chat lines are parsed strictly so ordinary messages with "$" are not counted as job income
+			jobParser.parse(plain, chat).ifPresent(jobTracker::accept);
+		}
+		// payments: never from anything that looks like a chat line (fake protection, unchanged)
+		if (chat && chatLine == null && config().modules.finance) {
 			paymentParser.parse(plain).ifPresent(financeBook::onPayment);
 		}
-		if (config().modules.jobTracker) {
-			jobParser.parse(plain).ifPresent(jobTracker::accept);
+		if (config().modules.rtp && !fromPlayer) {
+			rtpParser.parse(plain).ifPresent(rtpTracker::accept);
 		}
+	}
+
+	/** Nicknames ("~Nick") or names of players in the tab list. */
+	private static boolean isPlayerName(String name) {
+		if (name.startsWith("~")) return true;
+		var connection = Minecraft.getInstance().getConnection();
+		return connection != null && connection.getPlayerInfo(name) != null;
 	}
 
 	/** Applies chat actions (from {@code ChatComponentMixin}). */
@@ -215,15 +257,19 @@ public final class OpTools implements ClientModInitializer {
 				() -> sb.append("kein Job-Treffer | "));
 		paymentParser.parse(text).ifPresentOrElse(p -> sb.append(p.incoming() ? "Eingang " : "Ausgang ").append(p.amount())
 				.append(" ").append(p.player()).append(" | "), () -> sb.append("keine Zahlung | "));
+		rtpParser.parse(text).ifPresentOrElse(r -> sb.append("RTP ").append(r.type()).append(r.biome() != null ? " (" + r.biome() + ")" : "")
+				.append(" | "), () -> sb.append("kein RTP | "));
 		chatLineParser.parse(text).ifPresentOrElse(c -> sb.append("Spieler-Chat von ").append(c.name()),
 				() -> sb.append("kein Spieler-Chat"));
+		sb.append(isActiveServer() ? " | OPSUCHT aktiv" : " | Server nicht als OPSUCHT erkannt");
 		return sb.toString();
 	}
 
 	public boolean isActiveServer() {
 		if (!config().general.onlyOnOpsucht) return true;
 		ServerData server = Minecraft.getInstance().getCurrentServer();
-		return server != null && patternRepository.get().isOpsuchtAddress(server.ip);
+		return server != null && (patternRepository.get().isOpsuchtAddress(server.ip)
+				|| patternRepository.get().isOpsuchtAddress(server.name));
 	}
 
 	public void openScreenNextTick(Supplier<Screen> screen) {
@@ -271,6 +317,14 @@ public final class OpTools implements ClientModInitializer {
 
 	public FinanceBook financeBook() {
 		return financeBook;
+	}
+
+	public RtpTracker rtpTracker() {
+		return rtpTracker;
+	}
+
+	public IncomingText incoming() {
+		return incoming;
 	}
 
 	public MarketService market() {

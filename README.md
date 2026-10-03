@@ -22,8 +22,10 @@ Menü: Taste **O** (änderbar) oder `/optools`.
 ## Funktionen
 
 ### Job-Tracker
-* Wertet die Job-Anzeige in der **Actionbar** automatisch aus (alle Actionbar-Pakete laufen über
-  `Gui#setOverlayMessage`, daher wird jede Variante erfasst). Job, Level, Fortschritt, erhaltene XP und Geld.
+* Wertet die Job-Anzeige automatisch aus – unabhängig vom Übertragungsweg: Actionbar (beide Pakettypen enden in
+  `Gui#setOverlayMessage`), Titel/Untertitel, Bossbars und Systemchat laufen über einen zentralen Router
+  (`OpTools#onIncoming`). Job, Level, Fortschritt, erhaltene XP und Geld werden reihenfolgeunabhängig erkannt,
+  z. B. `+2.5 XP · +12.73$ · Holzfäller · Level 58 · [...] · 11.91%`.
 * Sessionzeit (nur aktive Zeit, AFK-Lücken zählen nicht), XP/h, Geld/h, geschätzte XP bis zum Level-Up und ETA.
 * Sessions enden nach einstellbarer Inaktivität, beim Verlassen des Servers oder mit `/optools session neu`
   und werden in der Historie gespeichert.
@@ -58,12 +60,25 @@ Client-Kurzbefehle aus `config/optools/shortcuts.json` (Argumente werden angehä
 
 | Kurzbefehl | Sendet | Status |
 |---|---|---|
-| `/cb1` … `/cb6` | `/nav citybuild-1` … `/nav citybuild-6` | ⚠ Zielnamen nicht verifiziert – ggf. anpassen |
+| `/cb1` … `/cb6` | `/nav cb1` … `/nav cb6` | Navigator-Ziele der CityBuilds |
 | `/fw` | `/farm` (Farmwelt-Navigator) | laut Wiki |
 | `/rw` | `/redstone` | laut Wiki |
 | `/lux` | `/nav luxury-island` | laut Wiki |
 
 Neue Kurzbefehle: Eintrag in `shortcuts.json` ergänzen → `/optools reload` → neu verbinden.
+Alte Einträge `nav citybuild-N` aus 0.1 Alpha werden beim Start automatisch auf `nav cbN` korrigiert.
+
+### RTP-Tracker
+* Erkennt RTP-/Biom-Teleport-Meldungen (Anmeldung/Hinzufügung zu einem Biom, Warteschlangen-Position, Countdown,
+  Teleport, Abbruch, Abklingzeit) aus Chat, Actionbar, Titeln und Bossbars.
+* Keine fest verdrahteten Einzelsätze: eine Zeile muss RTP-Bezug haben (`rtpContext`) und wird dann über
+  Schlüsselwort-Patterns eingeordnet; Biom, Position und Sekunden werden unabhängig extrahiert.
+* Eigenes HUD-Widget „RTP / Biom-Teleport“ (nur sichtbar, solange etwas läuft), `/optools rtp` zeigt den Status.
+
+### Shard-Kurse im Item-Tooltip
+Für Items, die der Rohstoffhändler annimmt, steht der aktuelle Kurs unter dem normalen Tooltip
+(pro Stück, für den ganzen Stapel und im Vergleich zur Basis). Eigene Items wie Gräbergemisch werden über
+Name bzw. `custom_model_data` erkannt. Abschaltbar unter Einstellungen → Darstellung.
 
 ### Chat-QoL
 * Spielernamen im Chat sind anklickbar → bereitet `/msg <Name> ` vor (optional direkt ausführen,
@@ -86,6 +101,9 @@ Neue Kurzbefehle: Eintrag in `shortcuts.json` ergänzen → `/optools reload` �
 | `/optools session neu` / `pause` | Session beenden / pausieren |
 | `/optools reload` | Patterns & Kurzbefehle neu laden |
 | `/optools debug <text>` | Zeigt, wie eine Zeile geparst würde (zum Anpassen der Patterns) |
+| `/optools quellen` | Zeigt die zuletzt empfangenen Texte je Kanal (Actionbar, Titel, Bossbar, System-Chat), klickbar zum Kopieren |
+| `/optools debuglog` | Schreibt alle eingehenden Texte (inkl. JSON) nach `config/optools/debug/incoming-<Datum>.log` |
+| `/optools rtp` | Aktueller RTP-Status |
 
 ## Dateien
 
@@ -133,15 +151,17 @@ Die genauen Texte der OPSUCHT-Actionbar und der Zahlungsnachrichten sind nicht �
 Die Default-Patterns basieren auf dem dokumentierten OPMOD-Format (`Level X • XP: Y • $Z • P%`) plus
 tolerante Varianten. Falls etwas nicht erkannt wird:
 
-1. `/optools debug <Text aus dem Chat>` ausprobieren,
-2. das passende Pattern in `config/optools/opsucht-patterns.json` anpassen und `"customized": true` setzen,
-3. `/optools reload`.
+1. `/optools quellen` aufrufen – dort steht, auf welchem Kanal der Text ankam (oder `/optools debuglog` für ein
+   vollständiges Protokoll),
+2. `/optools debug <Text>` ausprobieren,
+3. das passende Pattern in `config/optools/opsucht-patterns.json` anpassen und `"customized": true` setzen,
+4. `/optools reload`.
 
 Wird eine Job-Aktion doppelt gezählt, hilft die Einstellung *Gewinn-Teiler* bzw. *Doppelte Actionbar ignorieren*.
 
 ## Getestet (0.1 Alpha)
 
-* 13 Unit-Tests für Zahlen-, Actionbar-, Zahlungs- und Chat-Parser, Fake-Zahlungs-Schutz, Merchant-Daten und Tracker-Mathematik.
+* 20 Unit-Tests für Zahlen-, Job-, Zahlungs-, Chat- und RTP-Parser (inkl. aktuellem OPSUCHT-Jobformat), Fake-Zahlungs-Schutz, Merchant-Daten und Tracker-Mathematik.
 * Im echten Client (Dev- und Produktionsumgebung mit dem gebauten Jar) mit simulierten OPSUCHT-Nachrichten:
   Actionbar → HUD/Tracker, Zahlungen → Finanzbuch (Fake-Zeile abgewiesen), klickbare Namen und `/ah`-Links,
   Live-Daten der OPSUCHT-API in Markt- und Shard-Tab, HUD-Editor, First-Start, Persistenz über Neustarts.

@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -25,14 +26,11 @@ public final class ShortcutRegistry {
 		this.file = dir.resolve("shortcuts.json");
 	}
 
-	/**
-	 * Defaults. CityBuild targets use the navigator ({@code /nav <ziel>}, documented in the OPSUCHT wiki for e.g.
-	 * {@code /nav luxury-island}); the exact CityBuild target names can be adjusted in shortcuts.json.
-	 */
+	/** Defaults. CityBuilds are reached via the navigator: {@code /cb1} sends {@code /nav cb1}. */
 	public static List<CommandShortcut> defaults() {
 		List<CommandShortcut> list = new ArrayList<>();
 		for (int i = 1; i <= 6; i++) {
-			list.add(new CommandShortcut("cb" + i, "nav citybuild-" + i, "Wechselt auf CityBuild " + i));
+			list.add(new CommandShortcut("cb" + i, "nav cb" + i, "Wechselt auf CityBuild " + i));
 		}
 		list.add(new CommandShortcut("fw", "farm", "Öffnet den Farmwelt-Navigator"));
 		list.add(new CommandShortcut("rw", "redstone", "Verbindet mit der Redstone-Welt"));
@@ -48,6 +46,10 @@ public final class ShortcutRegistry {
 			shortcuts = loaded;
 			save();
 		}
+		if (migrate(loaded)) {
+			shortcuts = loaded;
+			save();
+		}
 		List<CommandShortcut> valid = new ArrayList<>();
 		for (CommandShortcut s : loaded) {
 			if (s == null || s.alias == null || s.command == null) continue;
@@ -60,6 +62,22 @@ public final class ShortcutRegistry {
 		}
 		shortcuts = valid;
 	}
+
+	/** 0.1 Alpha shipped wrong CityBuild targets ("nav citybuild-1"); fix them in existing files. */
+	private static boolean migrate(List<CommandShortcut> list) {
+		boolean changed = false;
+		for (CommandShortcut s : list) {
+			if (s == null || s.command == null) continue;
+			Matcher m = OLD_CB_TARGET.matcher(s.command.strip());
+			if (m.matches()) {
+				s.command = "nav cb" + m.group(1);
+				changed = true;
+			}
+		}
+		return changed;
+	}
+
+	private static final Pattern OLD_CB_TARGET = Pattern.compile("/?nav citybuild-([0-9]+)");
 
 	public void save() {
 		try {

@@ -65,6 +65,21 @@ public final class MarketService {
 		});
 	}
 
+	private volatile boolean ratesLoading;
+
+	/** Refreshes only the merchant rates (used by item tooltips), at most once per refresh interval. */
+	public void refreshRates() {
+		long now = System.currentTimeMillis();
+		if (ratesLoading || loading || now - ratesUpdated < Math.max(30, refreshSeconds.get()) * 1000L) return;
+		ratesLoading = true;
+		api.fetchMerchantRates().whenComplete((list, t) -> {
+			ratesLoading = false;
+			ratesUpdated = System.currentTimeMillis();
+			if (t == null) rates = List.copyOf(list);
+			else OpTools.LOG.warn("OPSUCHT-API (Kurse): {}", rootMessage(t));
+		});
+	}
+
 	/** Returns cached history (possibly null while loading) and triggers a fetch if needed. */
 	public Map<String, List<HistoryPoint>> history(String material) {
 		CachedHistory cached = history.get(material);

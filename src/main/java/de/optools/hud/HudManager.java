@@ -38,6 +38,7 @@ public final class HudManager {
 		this.mod = mod;
 		register(new JobHudWidget());
 		register(new FinanceHudWidget());
+		register(new RtpHudWidget());
 	}
 
 	/** New widgets only need to be registered here. */

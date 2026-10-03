@@ -55,6 +55,36 @@ class ParserTest {
 	}
 
 	@Test
+	void jobActionbarCurrentOpsuchtFormat() {
+		JobGain g = jobs.parse("+2.5 XP · +12.73$ · Holzfäller · Level 58 · [||||||||||          ] · 11.91%").orElseThrow();
+		assertEquals("Holzfäller", g.job());
+		assertEquals(58, g.level());
+		assertEquals(2.5, g.xp(), 1e-9);
+		assertEquals(12.73, g.money(), 1e-9);
+		assertEquals(11.91, g.progress(), 1e-9);
+	}
+
+	@Test
+	void jobFieldsAreOrderIndependent() {
+		JobGain g = jobs.parse("Minenarbeiter · Level 3 · 45,5% · +1.250,50$ · +10 XP").orElseThrow();
+		assertEquals("Minenarbeiter", g.job());
+		assertEquals(3, g.level());
+		assertEquals(10, g.xp(), 1e-9);
+		assertEquals(1250.5, g.money(), 1e-9);
+		assertEquals(45.5, g.progress(), 1e-9);
+		// unknown job name right before "Level"
+		JobGain u = jobs.parse("+1 XP · +0.50$ · Schmied · Level 2 · 3%").orElseThrow();
+		assertEquals("Schmied", u.job());
+	}
+
+	@Test
+	void strictModeRejectsPaymentsInChat() {
+		assertTrue(jobs.parse("Du hast Steve 1.500$ überwiesen.", true).isEmpty());
+		assertTrue(jobs.parse("Steve hat dir +50$ gegeben, Level 3", true).isEmpty());
+		assertTrue(jobs.parse("+2.5 XP · +12.73$ · Holzfäller · Level 58 · 11.91%", true).isPresent());
+	}
+
+	@Test
 	void jobActionbarIgnoresOtherText() {
 		assertTrue(jobs.parse("Du hast keinen Platz im Inventar").isEmpty());
 	}

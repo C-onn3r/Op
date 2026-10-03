@@ -85,6 +85,8 @@ public final class SettingsTab extends TabView {
 			int next = (accentIndex(cfg) + 1) % Theme.ACCENTS.length;
 			cfg.general.accentColor = Theme.ACCENTS[next];
 		});
+		p.toggle("Shard-Kurse im Item-Tooltip", "Rohstoffhändler-Kurs unter passenden Items", () -> cfg.market.tooltipRates,
+				v -> cfg.market.tooltipRates = v);
 		p.toggle("Nur auf OPSUCHT aktiv", "Parser, HUD und Chat-Aktionen nur auf opsucht.net", () -> cfg.general.onlyOnOpsucht,
 				v -> cfg.general.onlyOnOpsucht = v);
 
@@ -118,6 +120,9 @@ public final class SettingsTab extends TabView {
 		if (!mod.patterns().errors().isEmpty()) {
 			for (String e : mod.patterns().errors()) p.info("⚠ " + e, Theme.NEGATIVE);
 		}
+		p.toggle("Debug-Log eingehender Texte", "Actionbar/Titel/Bossbar/System → config/optools/debug",
+				() -> cfg.general.debugLogIncoming, v -> cfg.general.debugLogIncoming = v);
+		p.info("/optools quellen zeigt die zuletzt empfangenen Texte pro Kanal (zum Kopieren).", Theme.FAINT);
 		p.action("opsucht-patterns.json", "Öffnen", UiButton.Style.SECONDARY, () -> open(mod.patternRepository().file()));
 		p.action("Dateien neu laden", "Neu laden", UiButton.Style.SECONDARY, () -> {
 			mod.reloadFiles();

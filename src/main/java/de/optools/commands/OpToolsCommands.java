@@ -10,7 +10,13 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import de.optools.opsucht.IncomingText;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
+
+import java.util.List;
 
 /** Registers {@code /optools} and all configured shortcuts as client commands. */
 public final class OpToolsCommands {
@@ -40,6 +46,22 @@ public final class OpToolsCommands {
 							mod.jobTracker().setPaused(paused);
 							return feedback(ctx, paused ? "Job-Tracking pausiert." : "Job-Tracking fortgesetzt.");
 						})))
+				.then(ClientCommandManager.literal("quellen").executes(ctx -> sources(ctx)))
+				.then(ClientCommandManager.literal("debuglog").executes(ctx -> {
+					var general = mod.config().general;
+					general.debugLogIncoming = !general.debugLogIncoming;
+					mod.saveConfig();
+					return feedback(ctx, general.debugLogIncoming
+							? "Debug-Log AN – alle Actionbar-/Titel-/Bossbar-/Systemtexte werden nach "
+							+ mod.incoming().logFile() + " geschrieben."
+							: "Debug-Log AUS.");
+				}))
+				.then(ClientCommandManager.literal("rtp").executes(ctx -> {
+					var s = mod.rtpTracker().snapshot();
+					return feedback(ctx, "RTP-Status: " + s.status().label + (s.biome() != null ? " · Biom " + s.biome() : "")
+							+ (s.position() >= 0 ? " · Position #" + s.position() : "")
+							+ (s.lastMessage() != null ? " · letzte Meldung: " + s.lastMessage() : ""));
+				}))
 				.then(ClientCommandManager.literal("reload").executes(ctx -> {
 					mod.reloadFiles();
 					int errors = mod.patterns().errors().size();
@@ -61,6 +83,29 @@ public final class OpToolsCommands {
 					.then(ClientCommandManager.argument("args", StringArgumentType.greedyString())
 							.executes(ctx -> run(shortcut, StringArgumentType.getString(ctx, "args")))));
 		}
+	}
+
+	/** Lists the last texts received on every client path, each clickable to copy. */
+	private static int sources(CommandContext<FabricClientCommandSource> ctx) {
+		OpTools mod = OpTools.get();
+		ctx.getSource().sendFeedback(Component.literal("[OP Tools] ").withStyle(ChatFormatting.LIGHT_PURPLE)
+				.append(Component.literal("Zuletzt empfangene Servertexte (Klick = kopieren)"
+						+ (mod.isActiveServer() ? "" : " – Server wird NICHT als OPSUCHT erkannt!"))
+						.withStyle(mod.isActiveServer() ? ChatFormatting.GRAY : ChatFormatting.RED)));
+		for (IncomingText.Source source : IncomingText.Source.values()) {
+			List<IncomingText.Entry> entries = mod.incoming().recent(source);
+			int from = Math.max(0, entries.size() - 3);
+			MutableComponent line = Component.literal(" " + source.label + ": ").withStyle(ChatFormatting.DARK_AQUA);
+			if (entries.isEmpty()) line.append(Component.literal("–").withStyle(ChatFormatting.DARK_GRAY));
+			ctx.getSource().sendFeedback(line);
+			for (IncomingText.Entry e : entries.subList(from, entries.size())) {
+				String text = e.plain().length() > 120 ? e.plain().substring(0, 120) + "…" : e.plain();
+				ctx.getSource().sendFeedback(Component.literal("   " + text).withStyle(style -> style.withColor(ChatFormatting.WHITE)
+						.withClickEvent(new ClickEvent.CopyToClipboard(e.plain()))
+						.withHoverEvent(new HoverEvent.ShowText(Component.literal("Klicken zum Kopieren")))));
+			}
+		}
+		return 1;
 	}
 
 	private static int open(MainScreen.Tab tab) {

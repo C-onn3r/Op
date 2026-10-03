@@ -44,9 +44,11 @@ public final class OpToolsConfig {
 		public boolean commandShortcuts = true;
 		public boolean chatActions = true;
 		public boolean hud = true;
+		public boolean rtp = true;
 
 		public boolean isEnabled(ModuleId id) {
 			return switch (id) {
+				case RTP -> rtp;
 				case JOB_TRACKER -> jobTracker;
 				case FINANCE -> finance;
 				case MARKET -> market;
@@ -58,6 +60,7 @@ public final class OpToolsConfig {
 
 		public void set(ModuleId id, boolean enabled) {
 			switch (id) {
+				case RTP -> rtp = enabled;
 				case JOB_TRACKER -> jobTracker = enabled;
 				case FINANCE -> finance = enabled;
 				case MARKET -> market = enabled;
@@ -73,6 +76,8 @@ public final class OpToolsConfig {
 		public boolean onlyOnOpsucht = true;
 		/** Accent colour of the UI (RGB). */
 		public int accentColor = 0x7C5CFF;
+		/** Write all received actionbar/title/bossbar/system texts to config/optools/debug (troubleshooting). */
+		public boolean debugLogIncoming = false;
 	}
 
 	public static final class Jobs {
@@ -101,6 +106,8 @@ public final class OpToolsConfig {
 		/** Refresh interval while the market view is open (API cache TTL is 60 s). */
 		public int refreshSeconds = 60;
 		public String apiBaseUrl = "https://api.opsucht.net";
+		/** Show Rohstoffhändler rates in item tooltips. */
+		public boolean tooltipRates = true;
 	}
 
 	public static final class Chat {

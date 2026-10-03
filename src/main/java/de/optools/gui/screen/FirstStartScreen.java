@@ -11,8 +11,8 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 /**
- * First-start setup. "Lokal verwenden" is the working default; the self-hosted server option is visible but
- * clearly marked as Coming Soon and cannot be activated in 0.1 Alpha (the address is only remembered).
+ * First-start setup. "Lokal verwenden" is the working default; the self-hosted server option is only shown as a
+ * preview: input and button are disabled and nothing is stored (Coming Soon).
  */
 public final class FirstStartScreen extends OpScreen {
 	private EditBox addressBox;
@@ -32,16 +32,20 @@ public final class FirstStartScreen extends OpScreen {
 		localY = top + 42;
 		remoteY = localY + cardH + 8;
 
+		// preview only: not editable, not focusable, nothing is saved
 		addressBox = new EditBox(font, cardX + 10, remoteY + 30, cardW - 20 - 90, 14, Component.literal("Server-Adresse"));
-		addressBox.setHint(Component.literal("z. B. optools.example.de:8080"));
-		addressBox.setMaxLength(253);
-		addressBox.setValue(OpTools.get().config().storage.remoteAddress);
+		addressBox.setHint(Component.literal("Noch nicht verfügbar – Coming Soon"));
+		addressBox.setValue("");
+		addressBox.setEditable(false);
+		addressBox.setCanLoseFocus(true);
+		addressBox.active = false;
+		addressBox.setTextColorUneditable(Theme.FAINT);
 		addRenderableWidget(addressBox);
 
-		UiButton connect = add(new UiButton("Verbinden", UiButton.Style.SECONDARY, () -> {
+		UiButton connect = add(new UiButton("Coming Soon", UiButton.Style.SECONDARY, () -> {
 		}));
 		connect.enabled = false;
-		connect.tooltip("Coming Soon – in Version 0.1 Alpha noch nicht verfügbar");
+		connect.tooltip("Eigene OP Tools Server werden erst in einer späteren Version unterstützt.");
 		connect.bounds(cardX + cardW - 96, remoteY + 30, 86, 14);
 
 		int bw = 160;
@@ -53,7 +57,6 @@ public final class FirstStartScreen extends OpScreen {
 		OpTools mod = OpTools.get();
 		OpToolsConfig cfg = mod.config();
 		cfg.storage.mode = OpToolsConfig.DataMode.LOCAL;
-		cfg.storage.remoteAddress = addressBox.getValue().strip();
 		cfg.setupDone = true;
 		mod.saveConfig();
 		minecraft.setScreen(parent);
@@ -83,10 +86,17 @@ public final class FirstStartScreen extends OpScreen {
 		UiDraw.outline(g, cardX, remoteY, cardW, cardH, Theme.BORDER);
 		UiDraw.outline(g, cardX + 10, remoteY + 10, 9, 9, Theme.FAINT);
 		UiDraw.text(g, "Eigenen OP Tools Server verbinden", cardX + 26, remoteY + 10, Theme.MUTED);
-		UiDraw.badge(g, "COMING SOON", cardX + cardW - UiDraw.badgeWidth("COMING SOON") - 8, remoteY + 8, Theme.WARNING);
-		UiDraw.text(g, "IP / Domain deines selbst gehosteten Servers:", cardX + 26, remoteY + 20, Theme.FAINT);
+		UiDraw.text(g, "In dieser Version noch nicht verfügbar.", cardX + 26, remoteY + 20, Theme.FAINT);
 
 		UiDraw.textCentered(g, "Kann später jederzeit unter Einstellungen geändert werden.", width / 2, remoteY + cardH + 40, Theme.FAINT);
+	}
+
+	@Override
+	public void render(GuiGraphics g, int mouseX, int mouseY, float delta) {
+		super.render(g, mouseX, mouseY, delta);
+		// dim the whole remote card so it clearly reads as inactive
+		g.fill(cardX + 1, remoteY + 1, cardX + cardW - 1, remoteY + cardH - 1, 0x66000000);
+		UiDraw.badge(g, "COMING SOON", cardX + cardW - UiDraw.badgeWidth("COMING SOON") - 8, remoteY + 8, Theme.WARNING);
 	}
 
 	@Override
