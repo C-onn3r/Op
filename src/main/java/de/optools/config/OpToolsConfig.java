@@ -8,7 +8,7 @@ import java.util.Map;
  * so older config files keep working after an update.
  */
 public final class OpToolsConfig {
-	public static final int CURRENT_VERSION = 1;
+	public static final int CURRENT_VERSION = 2;
 
 	public int configVersion = CURRENT_VERSION;
 
@@ -85,8 +85,11 @@ public final class OpToolsConfig {
 		public int idleThresholdSeconds = 60;
 		/** After this much inactivity the running session is closed and stored in the history. */
 		public int sessionTimeoutMinutes = 15;
-		/** Identical actionbar texts within this window are treated as a re-send, not a new gain. */
-		public int duplicateWindowMs = 600;
+		/**
+		 * Identical actionbar texts within this window are treated as a re-send, not a new gain. 0 = count every
+		 * packet: OPSUCHT sends one actionbar per paid block (Timber axes send many identical ones in one tick).
+		 */
+		public int duplicateWindowMs = 0;
 		/** Each parsed gain is divided by this value (safety valve if the server sends each gain twice). */
 		public double gainDivisor = 1.0;
 		/** Maximum stored sessions in the history. */

@@ -65,6 +65,19 @@ class ParserTest {
 	}
 
 	@Test
+	void jobActionbarFromLiveLog() {
+		// verbatim from a real OPSUCHT debug log (2026-10-03)
+		for (String[] c : new String[][]{{"+2,5 XP • +12,73$ • Holzfäller Level 58 • [|||||||||||||||||||||||||] 13,85%", "2.5"},
+				{"+4 XP • +12,73$ • Holzfäller Level 58 • [|||||||||||||||||||||||||] 13,95%", "4"}}) {
+			JobGain g = jobs.parse(c[0]).orElseThrow();
+			assertEquals("Holzfäller", g.job());
+			assertEquals(58, g.level());
+			assertEquals(Double.parseDouble(c[1]), g.xp(), 1e-9);
+			assertEquals(12.73, g.money(), 1e-9);
+		}
+	}
+
+	@Test
 	void jobFieldsAreOrderIndependent() {
 		JobGain g = jobs.parse("Minenarbeiter · Level 3 · 45,5% · +1.250,50$ · +10 XP").orElseThrow();
 		assertEquals("Minenarbeiter", g.job());

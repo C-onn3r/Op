@@ -61,7 +61,7 @@ public final class SettingsTab extends TabView {
 		p.slider("Session automatisch beenden nach", 1, 120, 1, () -> cfg.jobs.sessionTimeoutMinutes,
 				v -> cfg.jobs.sessionTimeoutMinutes = (int) v, v -> (int) v + " min");
 		p.slider("Doppelte Actionbar ignorieren innerhalb", 0, 3000, 50, () -> cfg.jobs.duplicateWindowMs,
-				v -> cfg.jobs.duplicateWindowMs = (int) v, v -> (int) v + " ms");
+				v -> cfg.jobs.duplicateWindowMs = (int) v, v -> v < 1 ? "Aus (jedes Paket zählt)" : (int) v + " ms");
 		p.cycle("Gewinn-Teiler (falls doppelt gezählt wird)", () -> Fmt.decimal(cfg.jobs.gainDivisor),
 				() -> cfg.jobs.gainDivisor = cfg.jobs.gainDivisor >= 2 ? 1 : 2);
 		p.slider("Maximal gespeicherte Sessions", 50, 5000, 50, () -> cfg.jobs.maxHistorySessions,

@@ -39,7 +39,17 @@ class JobTrackerTest {
 	}
 
 	@Test
-	void duplicatesAreIgnored() {
+	void timberBurstCountsEveryPacket() {
+		// Timber axe: 17 identical actionbars in the same tick, each one is a paid block
+		JobGain g = new JobGain("Holzfäller", 58, 2.5, 12.73, 13.85, "+2,5 XP • +12,73$ • Holzfäller Level 58 • [|] 13,85%");
+		for (int i = 0; i < 17; i++) assertTrue(tracker.accept(g));
+		assertEquals(17 * 2.5, tracker.snapshot().sessionXp(), 1e-6);
+		assertEquals(17 * 12.73, tracker.snapshot().sessionMoney(), 1e-6);
+	}
+
+	@Test
+	void optionalDuplicateWindow() {
+		cfg.duplicateWindowMs = 600;
 		JobGain g = gain(1, 5);
 		assertTrue(tracker.accept(g));
 		now += 100;

@@ -47,15 +47,7 @@ public final class OpToolsCommands {
 							return feedback(ctx, paused ? "Job-Tracking pausiert." : "Job-Tracking fortgesetzt.");
 						})))
 				.then(ClientCommandManager.literal("quellen").executes(ctx -> sources(ctx)))
-				.then(ClientCommandManager.literal("debuglog").executes(ctx -> {
-					var general = mod.config().general;
-					general.debugLogIncoming = !general.debugLogIncoming;
-					mod.saveConfig();
-					return feedback(ctx, general.debugLogIncoming
-							? "Debug-Log AN – alle Actionbar-/Titel-/Bossbar-/Systemtexte werden nach "
-							+ mod.incoming().logFile() + " geschrieben."
-							: "Debug-Log AUS.");
-				}))
+				.then(ClientCommandManager.literal("debuglog").executes(OpToolsCommands::toggleDebugLog))
 				.then(ClientCommandManager.literal("rtp").executes(ctx -> {
 					var s = mod.rtpTracker().snapshot();
 					return feedback(ctx, "RTP-Status: " + s.status().label + (s.biome() != null ? " · Biom " + s.biome() : "")
@@ -70,6 +62,7 @@ public final class OpToolsCommands {
 							+ " Neue Kurzbefehle gelten nach dem nächsten Serverbeitritt.");
 				}))
 				.then(ClientCommandManager.literal("debug")
+						.executes(OpToolsCommands::toggleDebugLog)
 						.then(ClientCommandManager.argument("text", StringArgumentType.greedyString()).executes(ctx -> {
 							String text = StringArgumentType.getString(ctx, "text");
 							return feedback(ctx, mod.debugParse(text));
@@ -83,6 +76,17 @@ public final class OpToolsCommands {
 					.then(ClientCommandManager.argument("args", StringArgumentType.greedyString())
 							.executes(ctx -> run(shortcut, StringArgumentType.getString(ctx, "args")))));
 		}
+	}
+
+	private static int toggleDebugLog(CommandContext<FabricClientCommandSource> ctx) {
+		OpTools mod = OpTools.get();
+		var general = mod.config().general;
+		general.debugLogIncoming = !general.debugLogIncoming;
+		mod.saveConfig();
+		return feedback(ctx, general.debugLogIncoming
+				? "Debug-Log AN – alle Actionbar-/Titel-/Bossbar-/Systemtexte werden nach "
+				+ mod.incoming().logFile() + " geschrieben. Nochmal /optools debug zum Ausschalten."
+				: "Debug-Log AUS. Tipp: /optools debug <Text> testet, wie ein Text erkannt wird.");
 	}
 
 	/** Lists the last texts received on every client path, each clickable to copy. */

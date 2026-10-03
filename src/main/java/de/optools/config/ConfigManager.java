@@ -30,6 +30,8 @@ public final class ConfigManager {
 		if (config.storage.mode == null || config.storage.mode == OpToolsConfig.DataMode.REMOTE) {
 			config.storage.mode = OpToolsConfig.DataMode.LOCAL;
 		}
+		// v2: the old 600 ms duplicate filter swallowed multi-block payouts (Timber axe) -> count every packet.
+		if (config.configVersion < 2 && config.jobs.duplicateWindowMs == 600) config.jobs.duplicateWindowMs = 0;
 		config.configVersion = OpToolsConfig.CURRENT_VERSION;
 		return config;
 	}

@@ -53,7 +53,7 @@ public final class JobTracker {
 		long now = clock.getAsLong();
 		if (paused) return false;
 		OpToolsConfig.Jobs cfg = config.get();
-		if (gain.raw().equals(lastRaw) && now - lastRawAt <= cfg.duplicateWindowMs) {
+		if (cfg.duplicateWindowMs > 0 && gain.raw().equals(lastRaw) && now - lastRawAt <= cfg.duplicateWindowMs) {
 			lastRawAt = now;
 			return false;
 		}

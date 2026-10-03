@@ -44,7 +44,8 @@ public final class IncomingText {
 		}
 	}
 
-	public record Entry(long time, Source source, String plain) {
+	/** @param count how often this exact text arrived in a row (e.g. 17 for a Timber-axe burst). */
+	public record Entry(long time, Source source, String plain, int count) {
 	}
 
 	private static final int KEEP_PER_SOURCE = 8;
@@ -59,15 +60,22 @@ public final class IncomingText {
 		for (Source s : Source.values()) recent.put(s, new ArrayDeque<>());
 	}
 
-	/** Stores the text; consecutive identical texts of one source are collapsed. */
+	/**
+	 * Stores the text; consecutive identical texts of one source are collapsed in the in-memory list (with a repeat
+	 * counter). The file log contains every single packet.
+	 */
 	public void record(Source source, Component component, boolean logToFile) {
 		String plain = TextUtil.stripFormatting(component.getString());
 		if (plain.isBlank()) return;
 		Deque<Entry> q = recent.get(source);
 		synchronized (q) {
 			Entry last = q.peekLast();
-			if (last != null && last.plain.equals(plain)) return;
-			q.addLast(new Entry(System.currentTimeMillis(), source, plain));
+			if (last != null && last.plain.equals(plain)) {
+				q.removeLast();
+				q.addLast(new Entry(System.currentTimeMillis(), source, plain, last.count + 1));
+			} else {
+				q.addLast(new Entry(System.currentTimeMillis(), source, plain, 1));
+			}
 			while (q.size() > KEEP_PER_SOURCE) q.removeFirst();
 		}
 		if (logToFile) writeLine(source, plain, json(component));
