@@ -1,0 +1,24 @@
+{
+	"schemaVersion": 1,
+	"id": "optools",
+	"version": "${version}",
+	"name": "OP Tools",
+	"description": "Open-Source-Komfortmod für OPSUCHT: Job-Tracker, Finanzbuch, Markt- & Shard-Kurse, Command- und Chat-QoL. Lokal-first.",
+	"authors": ["OP Tools Contributors"],
+	"contact": {},
+	"license": "MIT",
+	"icon": "assets/optools/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": ["de.optools.OpTools"]
+	},
+	"mixins": [
+		{ "config": "optools.mixins.json", "environment": "client" }
+	],
+	"depends": {
+		"fabricloader": ">=0.16.10",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

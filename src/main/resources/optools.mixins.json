@@ -1,0 +1,12 @@
+{
+	"required": true,
+	"package": "de.optools.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"ChatComponentMixin",
+		"GuiMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
