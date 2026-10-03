@@ -8,6 +8,7 @@ import de.optools.commands.OpToolsCommands;
 import de.optools.commands.ShortcutRegistry;
 import de.optools.config.ConfigManager;
 import de.optools.config.OpToolsConfig;
+import de.optools.util.Fmt;
 import de.optools.finance.FinanceBook;
 import de.optools.gui.screen.FirstStartScreen;
 import de.optools.gui.screen.MainScreen;
@@ -62,7 +63,7 @@ import java.util.function.Supplier;
  */
 public final class OpTools implements ClientModInitializer {
 	public static final String MOD_ID = "optools";
-	public static final String VERSION = "0.1 Alpha";
+	public static final String VERSION = "0.2 Alpha";
 	public static final Logger LOG = LoggerFactory.getLogger("OP Tools");
 
 	private static OpTools instance;
@@ -82,7 +83,6 @@ public final class OpTools implements ClientModInitializer {
 	private ChatLineParser chatLineParser;
 	private RtpParser rtpParser;
 	private RtpTracker rtpTracker;
-	private IncomingText incoming;
 	private final Map<UUID, String> bossTexts = new HashMap<>();
 	private KeyMapping menuKey;
 	private Supplier<Screen> pendingScreen;
@@ -117,9 +117,9 @@ public final class OpTools implements ClientModInitializer {
 		chatLineParser = new ChatLineParser(patterns);
 		rtpParser = new RtpParser(patterns);
 		rtpTracker = new RtpTracker(System::currentTimeMillis);
-		incoming = new IncomingText(dir.resolve("debug"));
 
 		jobTracker = new JobTracker(() -> config().jobs, System::currentTimeMillis);
+		Fmt.fullNumbers(() -> config().general.numberStyle == OpToolsConfig.NumberStyle.FULL);
 		financeBook = new FinanceBook(dataStore, this::config);
 		jobTracker.addListener(financeBook);
 		jobTracker.addListener(new JobTracker.Listener() {
@@ -216,7 +216,6 @@ public final class OpTools implements ClientModInitializer {
 	 * and the Fabric system-message event). Dispatches to job tracker, finance book and RTP tracker.
 	 */
 	public void onIncoming(IncomingText.Source source, Component message) {
-		incoming.record(source, message, config().general.debugLogIncoming);
 		if (!isActiveServer()) return;
 		String plain = TextUtil.stripFormatting(message.getString());
 		boolean chat = source == IncomingText.Source.SYSTEM_CHAT;
@@ -247,22 +246,6 @@ public final class OpTools implements ClientModInitializer {
 	/** Applies chat actions (from {@code ChatComponentMixin}). */
 	public Component decorateChat(Component message) {
 		return chatActions.process(message);
-	}
-
-	/** Explains how a line would be parsed ({@code /optools debug <text>}). */
-	public String debugParse(String text) {
-		StringBuilder sb = new StringBuilder();
-		jobParser.parse(text).ifPresentOrElse(g -> sb.append("Job: ").append(g.job()).append(" L").append(g.level())
-						.append(" +").append(g.xp()).append(" XP +").append(g.money()).append(" $ ").append(g.progress()).append("% | "),
-				() -> sb.append("kein Job-Treffer | "));
-		paymentParser.parse(text).ifPresentOrElse(p -> sb.append(p.incoming() ? "Eingang " : "Ausgang ").append(p.amount())
-				.append(" ").append(p.player()).append(" | "), () -> sb.append("keine Zahlung | "));
-		rtpParser.parse(text).ifPresentOrElse(r -> sb.append("RTP ").append(r.type()).append(r.biome() != null ? " (" + r.biome() + ")" : "")
-				.append(" | "), () -> sb.append("kein RTP | "));
-		chatLineParser.parse(text).ifPresentOrElse(c -> sb.append("Spieler-Chat von ").append(c.name()),
-				() -> sb.append("kein Spieler-Chat"));
-		sb.append(isActiveServer() ? " | OPSUCHT aktiv" : " | Server nicht als OPSUCHT erkannt");
-		return sb.toString();
 	}
 
 	public boolean isActiveServer() {
@@ -321,10 +304,6 @@ public final class OpTools implements ClientModInitializer {
 
 	public RtpTracker rtpTracker() {
 		return rtpTracker;
-	}
-
-	public IncomingText incoming() {
-		return incoming;
 	}
 
 	public MarketService market() {

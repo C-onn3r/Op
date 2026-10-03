@@ -22,6 +22,7 @@ class JobTrackerTest {
 
 	@Test
 	void ratesAndEta() {
+		cfg.idleThresholdSeconds = 20; // gains every 10 s are active time
 		for (int i = 0; i < 61; i++) {
 			tracker.accept(gain(i, 10 + i * 0.5));
 			now += 10_000; // one gain every 10 s
@@ -36,6 +37,21 @@ class JobTrackerTest {
 		// progress 10% -> 40% for 600 XP => 20 XP per %, 60% left => 1200 XP at 3660 XP/h
 		assertEquals(1200, s.xpToNextLevel(), 1.0);
 		assertEquals(1200 / 3660.0 * 3_600_000, s.etaMs(), 2000);
+	}
+
+	@Test
+	void afkTimeIsNotCounted() {
+		cfg.idleThresholdSeconds = 4;
+		tracker.accept(gain(1, 1));
+		now += 2_000;
+		tracker.accept(gain(2, 1));
+		assertFalse(tracker.isIdle());
+		now += 60_000; // AFK for a minute
+		assertTrue(tracker.isIdle());
+		assertEquals(6_000, tracker.snapshot().activeMs()); // 2 s + max. 4 s of the break
+		tracker.accept(gain(3, 1));
+		assertFalse(tracker.isIdle());
+		assertEquals(6_000, tracker.snapshot().activeMs());
 	}
 
 	@Test

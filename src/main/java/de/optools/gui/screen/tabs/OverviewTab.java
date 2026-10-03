@@ -62,11 +62,11 @@ public final class OverviewTab extends TabView {
 		int cw = col(w, 4, 6);
 		int ch = 40;
 		String job = s.active() ? (s.job() == null ? JobTracker.UNKNOWN_JOB : s.job()) + (s.level() >= 0 ? " · L" + s.level() : "") : "Keine Session";
-		stat(g, x, top, cw, ch, "Session-XP", s.active() ? Fmt.compact(s.sessionXp()) : "–", Theme.TEXT, job);
-		stat(g, x + (cw + 6), top, cw, ch, "Session-Geld", s.active() ? Fmt.compact(s.sessionMoney()) + " $" : "–", Theme.POSITIVE,
+		stat(g, x, top, cw, ch, "Session-XP", s.active() ? Fmt.num(s.sessionXp()) : "–", Theme.TEXT, job);
+		stat(g, x + (cw + 6), top, cw, ch, "Session-Geld", s.active() ? Fmt.cash(s.sessionMoney()) : "–", Theme.POSITIVE,
 				s.active() ? Fmt.duration(s.activeMs()) + " aktiv" : null);
-		stat(g, x + (cw + 6) * 2, top, cw, ch, "XP / Stunde", s.active() ? Fmt.compact(s.xpPerHour()) : "–", Theme.accent(),
-				s.active() ? Fmt.compact(s.moneyPerHour()) + " $/h" : null);
+		stat(g, x + (cw + 6) * 2, top, cw, ch, "XP / Stunde", s.active() ? Fmt.num(s.xpPerHour()) : "–", Theme.accent(),
+				s.active() ? Fmt.cash(s.moneyPerHour()) + "/h" : null);
 		stat(g, x + (cw + 6) * 3, top, cw, ch, "Nächstes Level", s.etaMs() >= 0 ? "~" + Fmt.duration(s.etaMs()) : "–", Theme.INFO,
 				!Double.isNaN(s.progress()) ? Fmt.percent(s.progress()) + " erreicht" : null);
 
@@ -84,7 +84,7 @@ public final class OverviewTab extends TabView {
 		stat(g, x, fy, fw, ch, "Netto heute", Fmt.signedMoney(today.net() + mod.financeBook().pendingJobIncome()),
 				today.net() >= 0 ? Theme.POSITIVE : Theme.NEGATIVE, today.count() + " Buchungen");
 		stat(g, x + fw + 6, fy, fw, ch, "Netto 7 Tage", Fmt.signedMoney(week.net()), week.net() >= 0 ? Theme.POSITIVE : Theme.NEGATIVE,
-				"Ein " + Fmt.compact(week.income()) + " · Aus " + Fmt.compact(week.expense()));
+				"Ein " + Fmt.cash(week.income()) + " · Aus " + Fmt.cash(week.expense()));
 		var market = mod.market();
 		stat(g, x + (fw + 6) * 2, fy, fw, ch, "Marktdaten", market.pricesUpdated() > 0 ? market.prices().size() + " Items" : "nicht geladen",
 				Theme.TEXT, market.pricesUpdated() > 0 ? "Stand " + Fmt.time(market.pricesUpdated()) : "Tab „Marktpreise“ öffnen");

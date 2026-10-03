@@ -8,7 +8,7 @@ import java.util.Map;
  * so older config files keep working after an update.
  */
 public final class OpToolsConfig {
-	public static final int CURRENT_VERSION = 2;
+	public static final int CURRENT_VERSION = 3;
 
 	public int configVersion = CURRENT_VERSION;
 
@@ -71,18 +71,32 @@ public final class OpToolsConfig {
 		}
 	}
 
+	public enum NumberStyle {
+		COMPACT("Kompakt (12,3k · 1,2 Mio)"),
+		FULL("Vollständig (12.345,67)");
+
+		public final String label;
+
+		NumberStyle(String label) {
+			this.label = label;
+		}
+	}
+
 	public static final class General {
 		/** Only parse messages / run server-specific features while connected to OPSUCHT. */
 		public boolean onlyOnOpsucht = true;
 		/** Accent colour of the UI (RGB). */
 		public int accentColor = 0x7C5CFF;
-		/** Write all received actionbar/title/bossbar/system texts to config/optools/debug (troubleshooting). */
-		public boolean debugLogIncoming = false;
+		/** How numbers are shown: compact (12,3k / 1,2 Mio) or full (12.345,67). */
+		public NumberStyle numberStyle = NumberStyle.COMPACT;
 	}
 
 	public static final class Jobs {
-		/** Gaps longer than this do not count as active time (AFK, menus, ...). */
-		public int idleThresholdSeconds = 60;
+		/**
+		 * AFK threshold (1–20 s): without a new job action for longer than this, the tracker stops counting time, so
+		 * breaks do not lower the hourly averages. The session itself keeps running.
+		 */
+		public int idleThresholdSeconds = 5;
 		/** After this much inactivity the running session is closed and stored in the history. */
 		public int sessionTimeoutMinutes = 15;
 		/**

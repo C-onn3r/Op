@@ -57,9 +57,9 @@ public final class JobsTab extends TabView {
 			double hours = Math.max(1, s.activeMs) / 3_600_000.0;
 			UiDraw.text(g, Fmt.dateTime(s.start), rx + 4, ry + 2, Theme.MUTED);
 			if (rw > 230) UiDraw.text(g, Fmt.duration(s.activeMs), rx + 66, ry + 2, Theme.TEXT);
-			UiDraw.textRight(g, Fmt.compact(s.totalXp()), rx + rw - rw * 30 / 100, ry + 2, Theme.TEXT);
-			UiDraw.textRight(g, Fmt.compact(s.totalMoney()) + " $", rx + rw - rw * 15 / 100, ry + 2, Theme.POSITIVE);
-			UiDraw.textRight(g, Fmt.compact(metric == 0 ? s.totalXp() / hours : s.totalMoney() / hours), rx + rw - 4, ry + 2, Theme.accent());
+			UiDraw.textRight(g, Fmt.num(s.totalXp()), rx + rw - rw * 30 / 100, ry + 2, Theme.TEXT);
+			UiDraw.textRight(g, Fmt.cash(s.totalMoney()), rx + rw - rw * 15 / 100, ry + 2, Theme.POSITIVE);
+			UiDraw.textRight(g, Fmt.num(metric == 0 ? s.totalXp() / hours : s.totalMoney() / hours), rx + rw - 4, ry + 2, Theme.accent());
 			if (hover) UiDraw.tooltip(g, sessionTooltip(s), mx, my);
 		})).header(13, g -> {
 			int hy = y + listTopOffset() + 3;
@@ -75,11 +75,11 @@ public final class JobsTab extends TabView {
 		int rightX = x + leftW + 6, rightW = w - leftW - 6;
 		jobList = add(new ScrollList<JobStatistics.JobSummary>(12, (g, j, rx, ry, rw, rh, hover, mx, my) -> {
 			UiDraw.text(g, UiDraw.ellipsize(j.job() + (j.lastLevel() >= 0 ? " L" + j.lastLevel() : ""), rw - 70), rx + 4, ry + 2, Theme.TEXT);
-			UiDraw.textRight(g, metric == 0 ? Fmt.compact(j.xp()) : Fmt.compact(j.money()) + " $", rx + rw - 4, ry + 2,
+			UiDraw.textRight(g, metric == 0 ? Fmt.num(j.xp()) : Fmt.cash(j.money()), rx + rw - 4, ry + 2,
 					metric == 0 ? Theme.accent() : Theme.POSITIVE);
 			if (hover) UiDraw.tooltip(g, List.of(j.job(), "XP: " + Fmt.integer(j.xp()), "Geld: " + Fmt.money(j.money()),
-					"Aktionen: " + Fmt.integer(j.gains()), "Ø XP/h: " + Fmt.compact(j.xpPerHour()),
-					"Ø $/h: " + Fmt.compact(j.moneyPerHour())), mx, my);
+					"Aktionen: " + Fmt.integer(j.gains()), "Ø XP/h: " + Fmt.num(j.xpPerHour()),
+					"Ø $/h: " + Fmt.cash(j.moneyPerHour())), mx, my);
 		})).header(13, g -> UiDraw.text(g, "Jobs gesamt", rightX + 5, y + listTopOffset() + 3, Theme.FAINT))
 				.emptyText("Noch keine Jobdaten");
 		jobList.bounds(rightX, listTop, rightW, listH);
@@ -95,7 +95,7 @@ public final class JobsTab extends TabView {
 	private List<String> sessionTooltip(JobSessionRecord s) {
 		List<String> lines = new ArrayList<>();
 		lines.add(Fmt.dateTime(s.start) + " – " + Fmt.time(s.end));
-		s.jobs.forEach((job, t) -> lines.add(job + ": " + Fmt.compact(t.xp) + " XP, " + Fmt.compact(t.money) + " $"
+		s.jobs.forEach((job, t) -> lines.add(job + ": " + Fmt.num(t.xp) + " XP, " + Fmt.cash(t.money)
 				+ (t.levelStart >= 0 ? " (L" + t.levelStart + (t.levelEnd != t.levelStart ? "→" + t.levelEnd : "") + ")" : "")));
 		return lines;
 	}
@@ -153,10 +153,10 @@ public final class JobsTab extends TabView {
 		if (totals == null) return;
 		int top = y + 16;
 		int cw = col(w, 4, 6);
-		stat(g, x, top, cw, 40, "XP gesamt", Fmt.compact(totals.xp()), Theme.TEXT, totals.sessions() + " Sessions");
-		stat(g, x + cw + 6, top, cw, 40, "Geld gesamt", Fmt.compact(totals.money()) + " $", Theme.POSITIVE, null);
+		stat(g, x, top, cw, 40, "XP gesamt", Fmt.num(totals.xp()), Theme.TEXT, totals.sessions() + " Sessions");
+		stat(g, x + cw + 6, top, cw, 40, "Geld gesamt", Fmt.cash(totals.money()), Theme.POSITIVE, null);
 		stat(g, x + (cw + 6) * 2, top, cw, 40, "Aktive Zeit", Fmt.duration(totals.activeMs()), Theme.TEXT, null);
 		stat(g, x + (cw + 6) * 3, top, cw, 40, metric == 0 ? "Beste XP/h" : "Beste $/h",
-				Fmt.compact(metric == 0 ? totals.bestXpPerHour() : totals.bestMoneyPerHour()), Theme.accent(), "Sessions ≥ 5 min");
+				Fmt.num(metric == 0 ? totals.bestXpPerHour() : totals.bestMoneyPerHour()), Theme.accent(), "Sessions ≥ 5 min");
 	}
 }

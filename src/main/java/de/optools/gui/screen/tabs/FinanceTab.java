@@ -135,6 +135,6 @@ public final class FinanceTab extends TabView {
 
 	private static void card(GuiGraphics g, int x, int y, int w, String label, FinanceBook.Summary s) {
 		stat(g, x, y, w, 40, label, Fmt.signedMoney(s.net()), s.net() >= 0 ? Theme.POSITIVE : Theme.NEGATIVE,
-				"↑" + Fmt.compact(s.income()) + "  ↓" + Fmt.compact(s.expense()));
+				"↑" + Fmt.cash(s.income()) + "  ↓" + Fmt.cash(s.expense()));
 	}
 }

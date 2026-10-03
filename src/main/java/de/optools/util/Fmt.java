@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.function.BooleanSupplier;
 
 /** Display formatting (German locale, like OPSUCHT itself). */
 public final class Fmt {
@@ -18,7 +19,25 @@ public final class Fmt {
 	private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.yy").withZone(ZoneId.systemDefault());
 	private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault());
 
+	private static final ThreadLocal<DecimalFormat> FULL = ThreadLocal.withInitial(() -> new DecimalFormat("#,##0.##", DE));
+	private static volatile BooleanSupplier fullNumbers = () -> false;
+
 	private Fmt() {
+	}
+
+	/** Number style from the settings: true = full numbers (12.345,67) instead of compact ones (12,3k). */
+	public static void fullNumbers(BooleanSupplier supplier) {
+		fullNumbers = supplier;
+	}
+
+	/** Number in the user's chosen style. */
+	public static String num(double v) {
+		return fullNumbers.getAsBoolean() ? FULL.get().format(v) : compact(v);
+	}
+
+	/** Amount of money in the user's chosen style, with " $". */
+	public static String cash(double v) {
+		return fullNumbers.getAsBoolean() ? money(v) : compact(v) + " $";
 	}
 
 	public static String money(double v) {
@@ -29,7 +48,7 @@ public final class Fmt {
 		return (v > 0 ? "+" : "") + money(v);
 	}
 
-	/** Compact form for HUD/graphs: 1,2k / 3,4 Mio. */
+	/** Always compact (chart axes): 1,2k / 3,4 Mio. */
 	public static String compact(double v) {
 		double a = Math.abs(v);
 		if (a >= 1e9) return ONE.get().format(v / 1e9) + " Mrd";

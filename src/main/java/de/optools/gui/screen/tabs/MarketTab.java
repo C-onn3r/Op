@@ -117,7 +117,7 @@ public final class MarketTab extends TabView {
 	}
 
 	private static String price(OrderInfo info) {
-		return info == null || Double.isNaN(info.price()) ? "–" : Fmt.compact(info.price()) + " $";
+		return info == null || Double.isNaN(info.price()) ? "–" : Fmt.cash(info.price());
 	}
 
 	private void updateList() {

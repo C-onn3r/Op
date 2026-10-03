@@ -1,4 +1,4 @@
-# OP Tools – 0.1 Alpha
+# OP Tools – 0.2 Alpha
 
 Open-Source-Fabric-Mod für den Minecraft-Server **OPSUCHT** (`opsucht.net`).
 Lokal-first, modular und vorbereitet für ein optionales, selbst gehostetes Backend.
@@ -14,7 +14,7 @@ Lokal-first, modular und vorbereitet für ein optionales, selbst gehostetes Back
 
 1. Fabric Loader für Minecraft 1.21.11 installieren.
 2. [Fabric API](https://modrinth.com/mod/fabric-api) in den `mods`-Ordner legen.
-3. `OP-Tools-0.1-Alpha.jar` in den `mods`-Ordner legen.
+3. `OP-Tools-0.2-Alpha.jar` in den `mods`-Ordner legen.
 4. Beim ersten Start erscheint der Einrichtungsbildschirm → **„Lokal verwenden“**.
 
 Menü: Taste **O** (änderbar) oder `/optools`.
@@ -26,7 +26,12 @@ Menü: Taste **O** (änderbar) oder `/optools`.
   `Gui#setOverlayMessage`), Titel/Untertitel, Bossbars und Systemchat laufen über einen zentralen Router
   (`OpTools#onIncoming`). Job, Level, Fortschritt, erhaltene XP und Geld werden reihenfolgeunabhängig erkannt,
   z. B. `+2.5 XP · +12.73$ · Holzfäller · Level 58 · [...] · 11.91%`.
-* Sessionzeit (nur aktive Zeit, AFK-Lücken zählen nicht), XP/h, Geld/h, geschätzte XP bis zum Level-Up und ETA.
+* Jede bezahlte Aktion zählt einzeln – auch wenn OPSUCHT viele identische Meldungen im selben Tick schickt
+  (z. B. Timber-Axt: eine Actionbar pro Block).
+* Sessionzeit (nur aktive Zeit), XP/h, Geld/h, geschätzte XP bis zum Level-Up und ETA.
+* AFK-Erkennung: ohne Job-Aktion länger als die eingestellte Zeit (Schieberegler 1–20 s, Standard 5 s) zeigt das
+  HUD „AFK“, die Pause zählt nicht in die aktive Zeit und verfälscht den Stundenschnitt nicht.
+* Zahlenformat einstellbar: kompakt (`12,3k`, `1,2 Mio`) oder vollständig (`12.345,67`).
 * Sessions enden nach einstellbarer Inaktivität, beim Verlassen des Servers oder mit `/optools session neu`
   und werden in der Historie gespeichert.
 * Statistiken: Gesamtwerte, Bestwerte, pro Job, Verlauf der aktuellen Session (Graph), XP/h bzw. $/h der letzten
@@ -100,9 +105,6 @@ Name bzw. `custom_model_data` erkannt. Abschaltbar unter Einstellungen → Darst
 | `/optools hud` | HUD-Editor |
 | `/optools session neu` / `pause` | Session beenden / pausieren |
 | `/optools reload` | Patterns & Kurzbefehle neu laden |
-| `/optools debug <text>` | Zeigt, wie eine Zeile geparst würde (zum Anpassen der Patterns) |
-| `/optools quellen` | Zeigt die zuletzt empfangenen Texte je Kanal (Actionbar, Titel, Bossbar, System-Chat), klickbar zum Kopieren |
-| `/optools debuglog` | Schreibt alle eingehenden Texte (inkl. JSON) nach `config/optools/debug/incoming-<Datum>.log` |
 | `/optools rtp` | Aktueller RTP-Status |
 
 ## Dateien
@@ -145,31 +147,24 @@ de.optools
 `updatedAt`, `deviceId`, `deleted`-Tombstone). Feature-Module sprechen nur mit `DataStore`; ein späterer
 `RemoteDataProvider` kann per `id`/`updatedAt` synchronisieren, ohne die Module anzufassen.
 
-## Was in 0.1 Alpha (noch) nicht verifiziert ist
+## Was noch nicht verifiziert ist
 
-Die genauen Texte der OPSUCHT-Actionbar und der Zahlungsnachrichten sind nicht öffentlich dokumentiert.
-Die Default-Patterns basieren auf dem dokumentierten OPMOD-Format (`Level X • XP: Y • $Z • P%`) plus
-tolerante Varianten. Falls etwas nicht erkannt wird:
+Das Job-Format (`+2,5 XP • +12,73$ • Holzfäller Level 58 • […] 13,85%`) ist mit echten OPSUCHT-Daten geprüft.
+Die Texte für Zahlungen und RTP sind nicht öffentlich dokumentiert und beruhen auf toleranten Mustern. Falls etwas
+nicht erkannt wird, das passende Pattern in `config/optools/opsucht-patterns.json` anpassen, `"customized": true`
+setzen und `/optools reload` ausführen.
 
-1. `/optools quellen` aufrufen – dort steht, auf welchem Kanal der Text ankam (oder `/optools debuglog` für ein
-   vollständiges Protokoll),
-2. `/optools debug <Text>` ausprobieren,
-3. das passende Pattern in `config/optools/opsucht-patterns.json` anpassen und `"customized": true` setzen,
-4. `/optools reload`.
+## Getestet (0.2 Alpha)
 
-Wird eine Job-Aktion doppelt gezählt, hilft die Einstellung *Gewinn-Teiler* bzw. *Doppelte Actionbar ignorieren*.
-
-## Getestet (0.1 Alpha)
-
-* 20 Unit-Tests für Zahlen-, Job-, Zahlungs-, Chat- und RTP-Parser (inkl. aktuellem OPSUCHT-Jobformat), Fake-Zahlungs-Schutz, Merchant-Daten und Tracker-Mathematik.
+* 23 Unit-Tests für Zahlen-, Job-, Zahlungs-, Chat- und RTP-Parser (inkl. echter OPSUCHT-Actionbar-Zeilen), Fake-Zahlungs-Schutz, Merchant-Daten, Timber-Bursts, AFK-Zeit und Tracker-Mathematik.
 * Im echten Client (Dev- und Produktionsumgebung mit dem gebauten Jar) mit simulierten OPSUCHT-Nachrichten:
   Actionbar → HUD/Tracker, Zahlungen → Finanzbuch (Fake-Zeile abgewiesen), klickbare Namen und `/ah`-Links,
   Live-Daten der OPSUCHT-API in Markt- und Shard-Tab, HUD-Editor, First-Start, Persistenz über Neustarts.
-* Nicht getestet: auf dem echten OPSUCHT-Server (siehe Abschnitt oben zu nicht verifizierten Texten).
+* Job-Tracker auf dem echten OPSUCHT-Server bestätigt (0.1 Alpha nach Fix); Zahlungs- und RTP-Texte noch nicht.
 
 ## Bauen
 
 ```bash
-./gradlew build      # → build/libs/OP-Tools-0.1-Alpha.jar
+./gradlew build      # → build/libs/OP-Tools-0.2-Alpha.jar
 ./gradlew test       # Parser- und Tracker-Tests
 ```

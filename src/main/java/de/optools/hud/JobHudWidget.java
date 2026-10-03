@@ -54,7 +54,9 @@ public final class JobHudWidget extends HudWidget {
 
 	@Override
 	public String headerStatus() {
-		return OpTools.get().jobTracker().isPaused() ? "pausiert" : null;
+		JobTracker tracker = OpTools.get().jobTracker();
+		if (tracker.isPaused()) return "pausiert";
+		return tracker.isIdle() ? "AFK" : null;
 	}
 
 	@Override
@@ -74,13 +76,13 @@ public final class JobHudWidget extends HudWidget {
 		if (shows(PROGRESS) && !Double.isNaN(s.progress())) {
 			rows.add(HudRow.bar(Fmt.percent(s.progress()), s.progress() / 100.0));
 		}
-		if (shows(SESSION_XP)) rows.add(HudRow.text("XP", "+" + Fmt.compact(s.sessionXp()), Theme.TEXT));
-		if (shows(SESSION_MONEY)) rows.add(HudRow.text("Geld", "+" + Fmt.compact(s.sessionMoney()) + " $", Theme.POSITIVE));
-		if (shows(XP_PER_HOUR)) rows.add(HudRow.text("XP/h", Fmt.compact(s.xpPerHour()), Theme.TEXT));
-		if (shows(MONEY_PER_HOUR)) rows.add(HudRow.text("$/h", Fmt.compact(s.moneyPerHour()) + " $", Theme.POSITIVE));
+		if (shows(SESSION_XP)) rows.add(HudRow.text("XP", "+" + Fmt.num(s.sessionXp()), Theme.TEXT));
+		if (shows(SESSION_MONEY)) rows.add(HudRow.text("Geld", "+" + Fmt.cash(s.sessionMoney()), Theme.POSITIVE));
+		if (shows(XP_PER_HOUR)) rows.add(HudRow.text("XP/h", Fmt.num(s.xpPerHour()), Theme.TEXT));
+		if (shows(MONEY_PER_HOUR)) rows.add(HudRow.text("$/h", Fmt.cash(s.moneyPerHour()), Theme.POSITIVE));
 		if (shows(ETA)) rows.add(HudRow.text("Level-Up", s.etaMs() >= 0 ? "~" + Fmt.duration(s.etaMs()) : "–", Theme.INFO));
 		if (shows(XP_TO_NEXT)) {
-			rows.add(HudRow.text("Rest-XP", Double.isNaN(s.xpToNextLevel()) ? "–" : "~" + Fmt.compact(s.xpToNextLevel()), Theme.TEXT));
+			rows.add(HudRow.text("Rest-XP", Double.isNaN(s.xpToNextLevel()) ? "–" : "~" + Fmt.num(s.xpToNextLevel()), Theme.TEXT));
 		}
 		if (shows(SESSION_TIME)) rows.add(HudRow.text("Zeit", Fmt.duration(s.activeMs()), Theme.MUTED));
 		return rows;

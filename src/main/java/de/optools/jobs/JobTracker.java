@@ -152,6 +152,11 @@ public final class JobTracker {
 		return paused;
 	}
 
+	/** True while a session runs but the last job action is older than the AFK threshold (time is not counted). */
+	public boolean isIdle() {
+		return session != null && clock.getAsLong() - lastGainAt > config.get().idleThresholdSeconds * 1000L;
+	}
+
 	public JobSessionRecord currentSession() {
 		return session;
 	}

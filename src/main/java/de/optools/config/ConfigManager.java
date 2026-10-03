@@ -32,6 +32,10 @@ public final class ConfigManager {
 		}
 		// v2: the old 600 ms duplicate filter swallowed multi-block payouts (Timber axe) -> count every packet.
 		if (config.configVersion < 2 && config.jobs.duplicateWindowMs == 600) config.jobs.duplicateWindowMs = 0;
+		// v3 (0.2 Alpha): AFK threshold is now 1–20 s (old default 60 s)
+		if (config.configVersion < 3 && config.jobs.idleThresholdSeconds == 60) config.jobs.idleThresholdSeconds = 5;
+		config.jobs.idleThresholdSeconds = Math.max(1, Math.min(20, config.jobs.idleThresholdSeconds));
+		if (config.general.numberStyle == null) config.general.numberStyle = OpToolsConfig.NumberStyle.COMPACT;
 		config.configVersion = OpToolsConfig.CURRENT_VERSION;
 		return config;
 	}

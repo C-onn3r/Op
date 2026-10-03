@@ -56,8 +56,10 @@ public final class SettingsTab extends TabView {
 		}
 
 		p.header("Job-Tracking");
-		p.slider("Leerlauf zählt nicht als aktive Zeit nach", 10, 300, 5, () -> cfg.jobs.idleThresholdSeconds,
+		p.slider("AFK nach (stoppt Zeit & Stundenschnitt)", 1, 20, 1, () -> cfg.jobs.idleThresholdSeconds,
 				v -> cfg.jobs.idleThresholdSeconds = (int) v, v -> (int) v + " s");
+		p.info("Ohne Job-Aktion länger als diese Zeit gilt man als AFK: die Session bleibt bestehen, aber die Pause "
+				+ "zählt nicht in die aktive Zeit und verfälscht XP/h und $/h nicht.", Theme.FAINT);
 		p.slider("Session automatisch beenden nach", 1, 120, 1, () -> cfg.jobs.sessionTimeoutMinutes,
 				v -> cfg.jobs.sessionTimeoutMinutes = (int) v, v -> (int) v + " min");
 		p.slider("Doppelte Actionbar ignorieren innerhalb", 0, 3000, 50, () -> cfg.jobs.duplicateWindowMs,
@@ -85,6 +87,8 @@ public final class SettingsTab extends TabView {
 			int next = (accentIndex(cfg) + 1) % Theme.ACCENTS.length;
 			cfg.general.accentColor = Theme.ACCENTS[next];
 		});
+		p.cycle("Zahlenformat", () -> cfg.general.numberStyle.label, () -> cfg.general.numberStyle =
+				cfg.general.numberStyle == OpToolsConfig.NumberStyle.COMPACT ? OpToolsConfig.NumberStyle.FULL : OpToolsConfig.NumberStyle.COMPACT);
 		p.toggle("Shard-Kurse im Item-Tooltip", "Rohstoffhändler-Kurs unter passenden Items", () -> cfg.market.tooltipRates,
 				v -> cfg.market.tooltipRates = v);
 		p.toggle("Nur auf OPSUCHT aktiv", "Parser, HUD und Chat-Aktionen nur auf opsucht.net", () -> cfg.general.onlyOnOpsucht,
@@ -120,9 +124,6 @@ public final class SettingsTab extends TabView {
 		if (!mod.patterns().errors().isEmpty()) {
 			for (String e : mod.patterns().errors()) p.info("⚠ " + e, Theme.NEGATIVE);
 		}
-		p.toggle("Debug-Log eingehender Texte", "Actionbar/Titel/Bossbar/System → config/optools/debug",
-				() -> cfg.general.debugLogIncoming, v -> cfg.general.debugLogIncoming = v);
-		p.info("/optools quellen zeigt die zuletzt empfangenen Texte pro Kanal (zum Kopieren).", Theme.FAINT);
 		p.action("opsucht-patterns.json", "Öffnen", UiButton.Style.SECONDARY, () -> open(mod.patternRepository().file()));
 		p.action("Dateien neu laden", "Neu laden", UiButton.Style.SECONDARY, () -> {
 			mod.reloadFiles();
